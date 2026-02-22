@@ -1,0 +1,147 @@
+name: Extract Content
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  extract:
+    # Only run on issues with the 'extract' label
+    if: contains(github.event.issue.labels.*.name, 'extract')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Parse URL from issue
+        id: parse
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: |
+          python -c "
+          import os, re
+
+          title = os.environ.get('ISSUE_TITLE', '')
+          body = os.environ.get('ISSUE_BODY', '')
+
+          # Look for URL in title first, then body
+          url_pattern = r'https?://[^\s<>\"\')}\]]+'
+          urls = re.findall(url_pattern, title) or re.findall(url_pattern, body)
+
+          if urls:
+              url = urls[0]
+              print(f'Found URL: {url}')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write(f'url={url}\n')
+                  f.write('found=true\n')
+          else:
+              print('No URL found in issue')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write('found=false\n')
+          "
+
+      - name: Run extraction
+        id: extract
+        if: steps.parse.outputs.found == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: python coord.py "${{ steps.parse.outputs.url }}"
+
+      - name: Comment on extraction failure
+        if: steps.parse.outputs.found == 'true' && failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "Extraction failed. This may be a YouTube/Twitter URL without `XAI_API_KEY` configured.\n\nAdd `XAI_API_KEY` to repository secrets, or process this URL manually:\n```\npython coord.py \"${{ steps.parse.outputs.url }}\"\n```"
+            });
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['manual']
+            });
+
+      - name: Commit and push extraction
+        if: steps.parse.outputs.found == 'true' && steps.extract.outcome == 'success'
+        run: |
+          git config user.name "Co-Ord Bot"
+          git config user.email "co-ord-bot@users.noreply.github.com"
+          git add extractions/
+          if git diff --staged --quiet; then
+            echo "No new files to commit"
+          else
+            git commit -m "Extract: ${{ github.event.issue.title }}"
+            git push
+          fi
+
+      - name: Comment on issue with result
+        if: steps.parse.outputs.found == 'true' && steps.extract.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Find the most recently created extraction file
+            const dir = './extractions';
+            const files = fs.readdirSync(dir)
+              .filter(f => f.endsWith('.md') && f !== 'INDEX.md')
+              .map(f => ({ name: f, time: fs.statSync(path.join(dir, f)).mtime }))
+              .sort((a, b) => b.time - a.time);
+
+            const latest = files[0];
+            if (latest) {
+              const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+              const fileUrl = `${repoUrl}/blob/main/extractions/${latest.name}`;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: `Extraction complete!\n\n[View extraction](${fileUrl})\n\nFile: \`extractions/${latest.name}\``
+              });
+            }
+
+      - name: Close issue
+        if: steps.parse.outputs.found == 'true' && steps.extract.outcome == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              state: 'closed'
+            });
+
+      - name: Comment if no URL found
+        if: steps.parse.outputs.found != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: "No URL found in this issue. Please include a URL in the issue title or body.\n\nExample title: `https://youtube.com/watch?v=abc123`"
+            });
