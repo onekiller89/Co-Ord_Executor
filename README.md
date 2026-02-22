@@ -144,6 +144,20 @@ The workflow triggers automatically when issues are created with the `extract` l
 ### Mobile Capture Flow
 
 ```
+Phone → Share URL → GitHub Mobile App (creates issue)
+                  → Telegram Bot (creates issue automatically)
+                           │
+                           ▼
+                GitHub Actions picks up issue
+                           │
+                           ▼
+                Runs coord.py extraction in the cloud
+                           │
+                           ▼
+                Commits result, updates INDEX.md, closes issue
+```
+
+```
 Phone                          Cloud                         Desktop
 ─────                          ─────                         ───────
 Share URL
@@ -157,6 +171,46 @@ Share URL
 ```
 
 ## How Extraction Works
+
+### Extraction Pipeline
+
+```
+  URL
+   │
+   ▼
+┌──────────────────┐
+│  Source Detector  │  Identifies: YouTube / Twitter / GitHub / Article
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│    Extractors     │  YouTube/Twitter → Grok API (or manual paste)
+│                   │  GitHub → GitHub API + README scrape
+│                   │  Article → readability-lxml + BeautifulSoup
+└────────┬─────────┘
+         │ raw content
+         ▼
+┌──────────────────┐
+│   AI Processor    │  Claude API with context-aware system prompt
+│                   │  Extracts: Summary, Insights, Actions,
+│                   │  Implementation Prompts, Links, Tags, Category
+└────────┬─────────┘
+         │ structured markdown
+         ▼
+┌──────────────────┐
+│     Outputs       │  Formats final document
+│                   │  Saves to repo + Obsidian vault
+│                   │  Updates INDEX.md tracker
+└──────────────────┘
+```
+
+### Architecture
+
+| Layer | What it does |
+|-------|-------------|
+| **Extractors** (`extractors/`) | Detects source type from URL, pulls raw content (Grok API for YouTube/Twitter with manual paste fallback, GitHub API + scraping, readability for articles) |
+| **AI Processor** (`processors/ai_processor.py`) | Sends raw content to Claude API with a context-aware system prompt. Extracts: Summary, Key Insights, Actions (checkboxes), Implementation Prompts (copy-paste ready), Links, Tags, Category |
+| **Outputs** (`outputs/`) | Formats into standardized markdown, saves to `extractions/` + Obsidian vault, updates `INDEX.md` tracker |
 
 | Source | Extraction Method | AI Processing |
 |--------|-------------------|---------------|
