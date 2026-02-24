@@ -97,7 +97,120 @@ All extractions are tracked in [`extractions/INDEX.md`](extractions/INDEX.md):
 
 Status workflow: **Backlog** → **TODO** → **In Progress** → **Done**
 
+## Mobile Capture
+
+Drop URLs from your phone — they get processed automatically via GitHub Actions.
+
+### Option A: GitHub Mobile App (no setup needed)
+
+1. Install the [GitHub mobile app](https://github.com/mobile)
+2. Open the Co-Ord_Executor repo
+3. Create a new issue — paste the URL as the title
+4. Add the `extract` label
+5. GitHub Actions processes it, commits the extraction, and closes the issue
+
+**Tip:** On your phone, use the share sheet → "Copy link" → open GitHub app → new issue → paste.
+
+### Option B: Telegram Bot (lowest friction)
+
+Share/forward URLs directly from any app to your personal Telegram bot.
+
+**Setup:**
+
+1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → save the token
+2. Create a [GitHub Personal Access Token](https://github.com/settings/tokens) with `repo` scope
+3. Add to `.env`:
+   ```
+   TELEGRAM_BOT_TOKEN=your-bot-token
+   GITHUB_TOKEN=ghp_your-github-pat
+   GITHUB_REPO=onekiller89/Co-Ord_Executor
+   TELEGRAM_ALLOWED_USERS=your_telegram_username
+   ```
+4. Run the bot on your WSL machine:
+   ```bash
+   python telegram_bot.py
+   ```
+5. Send any URL to your bot on Telegram — it creates a GitHub Issue, which GitHub Actions processes
+
+### GitHub Actions Setup
+
+The workflow triggers automatically when issues are created with the `extract` label. To enable it:
+
+1. Go to your repo → Settings → Secrets and variables → Actions
+2. Add these repository secrets:
+   - `ANTHROPIC_API_KEY` — your Claude API key
+   - `XAI_API_KEY` — your Grok API key (needed for YouTube/Twitter URLs)
+
+### Mobile Capture Flow
+
+```
+Phone → Share URL → GitHub Mobile App (creates issue)
+                  → Telegram Bot (creates issue automatically)
+                           │
+                           ▼
+                GitHub Actions picks up issue
+                           │
+                           ▼
+                Runs coord.py extraction in the cloud
+                           │
+                           ▼
+                Commits result, updates INDEX.md, closes issue
+```
+
+```
+Phone                          Cloud                         Desktop
+─────                          ─────                         ───────
+Share URL
+  ├→ GitHub App → Issue ──→ GitHub Actions ──→ Extraction
+  └→ Telegram Bot ─────┘      runs coord.py    committed
+                               updates INDEX    to repo
+                               closes issue
+                                                        git pull
+                                                        Obsidian sync
+                                                        Pick up & implement
+```
+
 ## How Extraction Works
+
+### Extraction Pipeline
+
+```
+  URL
+   │
+   ▼
+┌──────────────────┐
+│  Source Detector  │  Identifies: YouTube / Twitter / GitHub / Article
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│    Extractors     │  YouTube/Twitter → Grok API (or manual paste)
+│                   │  GitHub → GitHub API + README scrape
+│                   │  Article → readability-lxml + BeautifulSoup
+└────────┬─────────┘
+         │ raw content
+         ▼
+┌──────────────────┐
+│   AI Processor    │  Claude API with context-aware system prompt
+│                   │  Extracts: Summary, Insights, Actions,
+│                   │  Implementation Prompts, Links, Tags, Category
+└────────┬─────────┘
+         │ structured markdown
+         ▼
+┌──────────────────┐
+│     Outputs       │  Formats final document
+│                   │  Saves to repo + Obsidian vault
+│                   │  Updates INDEX.md tracker
+└──────────────────┘
+```
+
+### Architecture
+
+| Layer | What it does |
+|-------|-------------|
+| **Extractors** (`extractors/`) | Detects source type from URL, pulls raw content (Grok API for YouTube/Twitter with manual paste fallback, GitHub API + scraping, readability for articles) |
+| **AI Processor** (`processors/ai_processor.py`) | Sends raw content to Claude API with a context-aware system prompt. Extracts: Summary, Key Insights, Actions (checkboxes), Implementation Prompts (copy-paste ready), Links, Tags, Category |
+| **Outputs** (`outputs/`) | Formats into standardized markdown, saves to `extractions/` + Obsidian vault, updates `INDEX.md` tracker |
 
 | Source | Extraction Method | AI Processing |
 |--------|-------------------|---------------|
@@ -122,9 +235,12 @@ OBSIDIAN_VAULT_PATH=/mnt/c/Users/YourName/Documents/Obsidian/Co-Ord
 ```
 Co-Ord_Executor/
 ├── coord.py              # CLI entry point
+├── telegram_bot.py       # Telegram bot for mobile URL capture
 ├── config.py             # Configuration (.env, paths, API keys)
 ├── requirements.txt      # Python dependencies
 ├── .env.example          # Template for API keys and config
+├── .github/workflows/
+│   └── extract.yml       # GitHub Actions extraction workflow
 ├── extractors/
 │   ├── detector.py       # URL → source type detection
 │   ├── base.py           # Base extractor interface

@@ -33,6 +33,13 @@ class YouTubeExtractor(BaseExtractor):
         if config.XAI_API_KEY:
             return self._extract_via_grok(canonical_url)
 
+        # In CI mode, can't prompt for input
+        if config.CI_MODE:
+            raise RuntimeError(
+                "Cannot extract YouTube without XAI_API_KEY in CI mode. "
+                "Add XAI_API_KEY to your GitHub Secrets."
+            )
+
         # Fall back to manual paste
         return self._extract_via_paste(canonical_url)
 

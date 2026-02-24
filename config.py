@@ -25,6 +25,9 @@ INDEX_FILE = EXTRACTIONS_PATH / "INDEX.md"
 # Grok API (xAI uses OpenAI-compatible endpoint)
 GROK_API_BASE = "https://api.x.ai/v1"
 
+# CI mode — detected automatically in GitHub Actions, or set CI=true
+CI_MODE = os.getenv("CI", "").lower() in ("true", "1") or os.getenv("GITHUB_ACTIONS", "") == "true"
+
 # User-Agent for web scraping
 USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
