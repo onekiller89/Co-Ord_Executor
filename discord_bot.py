@@ -391,7 +391,9 @@ class MegaMind(discord.Client):
 
     async def _check_youtube_playlist(self) -> int:
         """Check YouTube playlist for new videos and process them."""
-        from watchers.youtube_playlist import get_new_playlist_videos, mark_video_processed
+        from watchers.youtube_playlist import (
+            get_new_playlist_videos, mark_video_processed, move_video_to_completed,
+        )
 
         loop = asyncio.get_event_loop()
         new_videos = await loop.run_in_executor(None, get_new_playlist_videos)
@@ -416,6 +418,15 @@ class MegaMind(discord.Client):
             try:
                 result = await self._process_url(video_url, source="youtube_playlist")
                 mark_video_processed(video["video_id"])
+
+                # Move video: remove from extract playlist, add to completed
+                await loop.run_in_executor(
+                    None,
+                    move_video_to_completed,
+                    video["video_id"],
+                    video["playlist_item_id"],
+                )
+
                 processed_count += 1
             except Exception as e:
                 log.error(f"Failed to process playlist video {video_url}: {e}")
