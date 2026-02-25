@@ -49,7 +49,7 @@ fi
 
 # ── Launch MegaMind Discord Bot ──
 echo "[MegaMind] Starting bot at $(date)..." | tee -a "$LOG_FILE"
-nohup python discord_bot.py >> "$LOG_FILE" 2>&1 &
+nohup python3 discord_bot.py >> "$LOG_FILE" 2>&1 &
 BOT_PID=$!
 echo "$BOT_PID" > "$PID_FILE"
 echo "[MegaMind] Bot started (PID $BOT_PID). Logs: $LOG_FILE"
@@ -59,7 +59,7 @@ DASHBOARD_LOG="$LOG_DIR/dashboard.log"
 DASHBOARD_PID_FILE="$LOG_DIR/dashboard.pid"
 if [ "${MEGAMIND_DASHBOARD:-1}" = "1" ]; then
     echo "[MegaMind] Starting dashboard..." | tee -a "$DASHBOARD_LOG"
-    nohup python dashboard.py >> "$DASHBOARD_LOG" 2>&1 &
+    nohup python3 dashboard.py >> "$DASHBOARD_LOG" 2>&1 &
     DASH_PID=$!
     echo "$DASH_PID" > "$DASHBOARD_PID_FILE"
     echo "[MegaMind] Dashboard started (PID $DASH_PID, port ${DASHBOARD_PORT:-8050}). Logs: $DASHBOARD_LOG"
