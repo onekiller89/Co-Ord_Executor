@@ -12,8 +12,10 @@ Usage:
 
 import asyncio
 import logging
+import os
 import re
 import subprocess
+import sys
 
 import discord
 from discord import app_commands
@@ -167,6 +169,23 @@ class MegaMind(discord.Client):
         log.info(f"MegaMind online as {self.user} (ID: {self.user.id})")
         log.info(f"Watching #extract ({config.DISCORD_EXTRACT_CHANNEL_ID})")
         log.info(f"Posting to #output ({config.DISCORD_OUTPUT_CHANNEL_ID})")
+        self._start_dashboard()
+
+    def _start_dashboard(self):
+        """Launch the dashboard web server as a background subprocess."""
+        if os.getenv("MEGAMIND_DASHBOARD", "1") == "0":
+            log.info("Dashboard disabled (MEGAMIND_DASHBOARD=0)")
+            return
+        try:
+            port = os.getenv("DASHBOARD_PORT", "8050")
+            self._dashboard_proc = subprocess.Popen(
+                [sys.executable, str(config.PROJECT_ROOT / "dashboard.py"), "--port", port],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            log.info(f"Dashboard started (PID {self._dashboard_proc.pid}, port {port})")
+        except Exception as e:
+            log.warning(f"Failed to start dashboard: {e}")
 
     async def on_message(self, message: discord.Message):
         """Watch #extract channel for URLs."""
@@ -272,16 +291,16 @@ class MegaMind(discord.Client):
     async def _post_output(self, result: dict):
         """Post structured extraction output to #output channel.
 
-        Supports two modes:
-        - **Forum channel**: Creates a tagged forum post per extraction.
-        - **Text channel**: Posts a compact header embed, then threads details.
-
-        Either way, #output stays clean and easy to navigate.
+        Creates a header embed in #output, then a thread with full details.
         """
+        # Fetch channel — try cache first, then API fetch as fallback
         channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
         if not channel:
-            log.error(f"Output channel {config.DISCORD_OUTPUT_CHANNEL_ID} not found")
-            return
+            try:
+                channel = await self.fetch_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
+            except discord.HTTPException:
+                log.error(f"Output channel {config.DISCORD_OUTPUT_CHANNEL_ID} not found")
+                return
 
         processed = result["processed"]
         sections = parse_sections(processed)
@@ -310,14 +329,22 @@ class MegaMind(discord.Client):
 
         embed.set_footer(text=f"MegaMind | {result['date']} | {result['filename']}")
 
-        # ── Forum channel: create a tagged post ──
-        if isinstance(channel, discord.ForumChannel):
-            thread = await self._post_to_forum(channel, result, embed, category, tags_text)
-        else:
-            # ── Text channel: post embed → create thread ──
-            header_msg = await channel.send(embed=embed)
-            thread_name = result["title"][:100]
-            thread = await header_msg.create_thread(name=thread_name)
+        # ── Post header embed and create thread ──
+        thread = None
+        header_msg = await channel.send(embed=embed)
+        thread_name = result["title"][:100]
+        try:
+            thread = await header_msg.create_thread(
+                name=thread_name,
+                auto_archive_duration=10080,  # 7 days
+            )
+        except discord.Forbidden:
+            log.error("Bot lacks CREATE_PUBLIC_THREADS permission on #output")
+        except discord.HTTPException as e:
+            log.error(f"Failed to create thread: {e}")
+
+        if not thread:
+            return
 
         # ── All detail messages go inside the thread ──
         await self._send_thread_details(thread, sections)
@@ -334,43 +361,6 @@ class MegaMind(discord.Client):
                 )
         except Exception:
             pass
-
-    async def _post_to_forum(
-        self,
-        forum: discord.ForumChannel,
-        result: dict,
-        embed: discord.Embed,
-        category: str,
-        tags_text: str,
-    ) -> discord.Thread:
-        """Create a tagged forum post. Matches existing forum tags by name."""
-        # Match available forum tags to the extraction's category and tags
-        applied_tags: list[discord.ForumTag] = []
-        available_tags = {t.name.lower(): t for t in forum.available_tags}
-
-        # Try to match category as a tag
-        if category.lower() in available_tags:
-            applied_tags.append(available_tags[category.lower()])
-
-        # Try to match source type
-        source = result["source_type"].lower()
-        if source in available_tags:
-            applied_tags.append(available_tags[source])
-
-        # Try to match individual tags
-        if tags_text:
-            import re as _re
-            tag_names = _re.findall(r"`#([^`]+)`", tags_text)
-            for tag_name in tag_names:
-                if tag_name.lower() in available_tags and len(applied_tags) < 5:
-                    applied_tags.append(available_tags[tag_name.lower()])
-
-        thread_with_msg = await forum.create_thread(
-            name=result["title"][:100],
-            embed=embed,
-            applied_tags=applied_tags[:5],  # Discord limit: 5 tags per post
-        )
-        return thread_with_msg.thread
 
     async def _send_thread_details(self, thread: discord.Thread, sections: dict):
         """Send all detail sections into an extraction thread."""

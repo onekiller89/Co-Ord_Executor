@@ -195,6 +195,11 @@ def _build_html(entries: list[dict], budget: dict) -> str:
   .view-toggle {{ display: flex; gap: 0.25rem; }}
   .view-btn {{ padding: 0.25rem 0.5rem; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; font-size: 0.7rem; }}
   .view-btn.active {{ background: var(--accent); color: white; border-color: var(--accent); }}
+  .zoom-controls {{ position: absolute; top: 1rem; right: 1rem; display: flex; flex-direction: column; gap: 0.25rem; }}
+  .zoom-btn {{ width: 32px; height: 32px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }}
+  .zoom-btn:hover {{ background: var(--accent); color: white; }}
+  .layout.graph-only {{ grid-template-columns: 1fr; }}
+  .layout.graph-only .sidebar {{ display: none; }}
   canvas {{ display: block; }}
 </style>
 </head>
@@ -211,6 +216,11 @@ def _build_html(entries: list[dict], budget: dict) -> str:
 <div class="layout">
   <div class="graph-panel">
     <canvas id="graph"></canvas>
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomIn()" title="Zoom in">+</button>
+      <button class="zoom-btn" onclick="zoomOut()" title="Zoom out">&minus;</button>
+      <button class="zoom-btn" onclick="zoomReset()" title="Reset zoom">&#8634;</button>
+    </div>
     <div class="legend">
       <div class="legend-item"><div class="legend-dot" style="background:#818cf8"></div>Centre</div>
       <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Category</div>
@@ -303,6 +313,13 @@ function setFilter(f) {{
 function setView(v) {{
   document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
+  const layout = document.querySelector('.layout');
+  if (v === 'graph') {{
+    layout.classList.add('graph-only');
+  }} else {{
+    layout.classList.remove('graph-only');
+  }}
+  resize();
 }}
 
 // ── Status update (calls API) ──
@@ -325,6 +342,18 @@ const ctx = canvas.getContext('2d');
 let W, H;
 let animId;
 let highlightedNode = null;
+let zoom = 1;
+let panX = 0, panY = 0;
+
+function zoomIn() {{ zoom = Math.min(zoom * 1.25, 5); }}
+function zoomOut() {{ zoom = Math.max(zoom / 1.25, 0.2); }}
+function zoomReset() {{ zoom = 1; panX = 0; panY = 0; }}
+
+canvas.addEventListener('wheel', e => {{
+  e.preventDefault();
+  if (e.deltaY < 0) zoom = Math.min(zoom * 1.1, 5);
+  else zoom = Math.max(zoom / 1.1, 0.2);
+}}, {{passive: false}});
 
 const groupColors = {{
   centre: '#818cf8', category: '#f59e0b', extraction: '#34d399', tag: '#60a5fa'
@@ -412,6 +441,10 @@ function simulate() {{
 
 function draw() {{
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
+  ctx.translate(W/2 + panX, H/2 + panY);
+  ctx.scale(zoom, zoom);
+  ctx.translate(-W/2, -H/2);
 
   // Draw links
   ctx.strokeStyle = 'rgba(100,116,139,0.2)';
@@ -454,6 +487,7 @@ function draw() {{
     ctx.fillText(n.label, n.x, n.y + r + 14);
   }});
 
+  ctx.restore();
   simulate();
   animId = requestAnimationFrame(draw);
 }}
@@ -463,29 +497,52 @@ function highlightNode(id) {{
   setTimeout(() => {{ highlightedNode = null; }}, 3000);
 }}
 
+// ── Transform screen coords to graph coords ──
+function screenToGraph(sx, sy) {{
+  return {{
+    x: (sx - W/2 - panX) / zoom + W/2,
+    y: (sy - H/2 - panY) / zoom + H/2,
+  }};
+}}
+
 // ── Mouse interaction ──
 let dragNode = null;
+let isPanning = false;
+let lastPanX = 0, lastPanY = 0;
 canvas.addEventListener('mousedown', e => {{
   const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const gp = screenToGraph(sx, sy);
   for (let n of graphData.nodes) {{
-    let dx = n.x - mx, dy = n.y - my;
-    if (dx*dx + dy*dy < (n.size/2 + 5) ** 2) {{
+    let dx = n.x - gp.x, dy = n.y - gp.y;
+    if (dx*dx + dy*dy < ((n.size/2 + 5) / zoom) ** 2) {{
       dragNode = n;
       dragNode.fixed = true;
-      break;
+      return;
     }}
   }}
+  isPanning = true;
+  lastPanX = e.clientX;
+  lastPanY = e.clientY;
 }});
 canvas.addEventListener('mousemove', e => {{
-  if (!dragNode) return;
-  const rect = canvas.getBoundingClientRect();
-  dragNode.x = e.clientX - rect.left;
-  dragNode.y = e.clientY - rect.top;
+  if (dragNode) {{
+    const rect = canvas.getBoundingClientRect();
+    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+    const gp = screenToGraph(sx, sy);
+    dragNode.x = gp.x;
+    dragNode.y = gp.y;
+  }} else if (isPanning) {{
+    panX += e.clientX - lastPanX;
+    panY += e.clientY - lastPanY;
+    lastPanX = e.clientX;
+    lastPanY = e.clientY;
+  }}
 }});
 canvas.addEventListener('mouseup', () => {{
   if (dragNode && dragNode.id !== 'megamind') dragNode.fixed = false;
   dragNode = null;
+  isPanning = false;
 }});
 
 // ── Init ──
