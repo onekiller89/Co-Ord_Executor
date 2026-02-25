@@ -243,6 +243,10 @@ class MegaMind(discord.Client):
         if tags_text:
             embed.add_field(name="Tags", value=tags_text, inline=False)
 
+        thumbnail = result.get("metadata", {}).get("thumbnail", "")
+        if thumbnail:
+            embed.set_image(url=thumbnail)
+
         embed.set_footer(text=f"MegaMind | {result['date']} | {result['filename']}")
         await channel.send(embed=embed)
 

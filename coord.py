@@ -57,6 +57,7 @@ def run_pipeline(url: str) -> dict:
         "filename": filename,
         "saved_to": saved,
         "date": date_str,
+        "metadata": result.metadata,
     }
 
 

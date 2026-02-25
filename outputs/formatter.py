@@ -14,8 +14,11 @@ def format_document(result: ExtractionResult, processed_content: str) -> str:
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     extraction_method = result.metadata.get("extraction_method", "scrape")
 
+    thumbnail = result.metadata.get("thumbnail", "")
+    banner_line = f"![banner]({thumbnail})\n\n" if thumbnail else ""
+
     document = f"""\
-# {result.title}
+{banner_line}# {result.title}
 
 > **Source:** {result.source_type} | **Extracted:** {now} | **Method:** {extraction_method}
 > **URL:** {result.url}
