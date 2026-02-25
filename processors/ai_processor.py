@@ -100,6 +100,19 @@ Analyse this content and produce the structured output as specified."""
         messages=[{"role": "user", "content": user_message}],
     )
 
+    # Track token usage for budget
+    try:
+        from budget import record_usage
+        record_usage(
+            model=config.CLAUDE_MODEL,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            api="anthropic",
+            title=result.title,
+        )
+    except Exception:
+        pass  # Don't let budget tracking break extraction
+
     return response.content[0].text
 
 

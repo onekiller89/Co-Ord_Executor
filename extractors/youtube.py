@@ -60,6 +60,21 @@ class YouTubeExtractor(BaseExtractor):
         )
 
         content = response.choices[0].message.content
+
+        # Track Grok token usage for budget
+        try:
+            from budget import record_usage
+            if response.usage:
+                record_usage(
+                    model=config.GROK_MODEL,
+                    input_tokens=response.usage.prompt_tokens or 0,
+                    output_tokens=response.usage.completion_tokens or 0,
+                    api="grok",
+                    title=url,
+                )
+        except Exception:
+            pass
+
         # Try to parse title from first line of response
         lines = content.strip().split("\n")
         title = lines[0].strip().lstrip("#").strip() if lines else "Untitled Video"

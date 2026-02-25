@@ -14,7 +14,6 @@ import asyncio
 import logging
 import re
 import subprocess
-import traceback
 
 import discord
 from discord import app_commands
@@ -111,13 +110,57 @@ class MegaMind(discord.Client):
         @self.tree.command(name="status", description="Show MegaMind bot status")
         async def status_command(interaction: discord.Interaction):
             yt_status = "Active" if config.YOUTUBE_API_KEY and config.YOUTUBE_EXTRACT_PLAYLIST_ID else "Not configured"
+            budget_info = _load_budget()
+            budget_line = (
+                f"API spend: **${budget_info['total_cost']:.4f}**"
+                if budget_info else "API tracking: not yet started"
+            )
             await interaction.response.send_message(
                 f"**MegaMind Status**\n"
                 f"Extractions this session: **{self.extraction_count}**\n"
                 f"YouTube watcher: **{yt_status}**\n"
                 f"Poll interval: **{config.YOUTUBE_POLL_INTERVAL // 60} min**\n"
                 f"Extract channel: <#{config.DISCORD_EXTRACT_CHANNEL_ID}>\n"
-                f"Output channel: <#{config.DISCORD_OUTPUT_CHANNEL_ID}>"
+                f"Output channel: <#{config.DISCORD_OUTPUT_CHANNEL_ID}>\n"
+                f"{budget_line}"
+            )
+
+        @self.tree.command(name="search", description="Search extractions by category or tag")
+        @app_commands.describe(query="Category name or tag to search for")
+        async def search_command(interaction: discord.Interaction, query: str):
+            from outputs.index import list_entries
+            results = list_entries(status_filter=None)
+            matches = []
+            for line in results.split("\n"):
+                if line.startswith("|") and not line.startswith("| #") and not line.startswith("|---"):
+                    if query.lower() in line.lower():
+                        matches.append(line)
+            if matches:
+                header = "| # | Title | Source | Category | Tags | Status | Date | File |\n|---|-------|--------|----------|------|--------|------|------|\n"
+                table = header + "\n".join(matches[:15])
+                await interaction.response.send_message(f"**Search results for `{query}`:**\n```\n{table}\n```")
+            else:
+                await interaction.response.send_message(f"No extractions found matching `{query}`.")
+
+        @self.tree.command(name="budget", description="Show API usage and cost tracking")
+        async def budget_command(interaction: discord.Interaction):
+            from budget import format_budget_embed_text
+            text = format_budget_embed_text()
+            embed = discord.Embed(
+                title="API Budget",
+                description=text,
+                colour=0x10B981,  # emerald
+            )
+            await interaction.response.send_message(embed=embed)
+
+        @self.tree.command(name="dashboard", description="Get the MegaMind dashboard link")
+        async def dashboard_command(interaction: discord.Interaction):
+            port = int(__import__("os").getenv("DASHBOARD_PORT", "8050"))
+            await interaction.response.send_message(
+                f"**MegaMind Dashboard**\n"
+                f"Knowledge graph, status tracking, and budget overview.\n"
+                f"Open: http://localhost:{port}\n\n"
+                f"Start it with: `python dashboard.py`"
             )
 
     async def on_ready(self):
@@ -176,11 +219,18 @@ class MegaMind(discord.Client):
         if str(payload.emoji) != "\U0001F916":  # robot emoji
             return
 
-        if payload.channel_id != config.DISCORD_OUTPUT_CHANNEL_ID:
-            return
-
+        # Prompts live in threads parented to #output, or directly in #output
         channel = self.get_channel(payload.channel_id)
         if not channel:
+            return
+
+        # Check if the channel is #output or a thread inside #output
+        is_output = payload.channel_id == config.DISCORD_OUTPUT_CHANNEL_ID
+        is_output_thread = (
+            isinstance(channel, discord.Thread)
+            and channel.parent_id == config.DISCORD_OUTPUT_CHANNEL_ID
+        )
+        if not is_output and not is_output_thread:
             return
 
         try:
@@ -220,7 +270,14 @@ class MegaMind(discord.Client):
         return result
 
     async def _post_output(self, result: dict):
-        """Post structured extraction output to #output channel."""
+        """Post structured extraction output to #output channel.
+
+        Supports two modes:
+        - **Forum channel**: Creates a tagged forum post per extraction.
+        - **Text channel**: Posts a compact header embed, then threads details.
+
+        Either way, #output stays clean and easy to navigate.
+        """
         channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
         if not channel:
             log.error(f"Output channel {config.DISCORD_OUTPUT_CHANNEL_ID} not found")
@@ -229,50 +286,116 @@ class MegaMind(discord.Client):
         processed = result["processed"]
         sections = parse_sections(processed)
         category = extract_category_from_content(processed)
+        tags_text = sections.get("Tags", "")
 
-        # 1. Header embed
+        # ── Build the header embed ──
+        summary_preview = sections.get("Summary", "")
+        if summary_preview and len(summary_preview) > 200:
+            summary_preview = summary_preview[:200] + "..."
+
         embed = discord.Embed(
             title=result["title"],
             url=result["url"],
+            description=summary_preview,
             colour=get_category_colour(category),
         )
         embed.add_field(name="Source", value=result["source_type"], inline=True)
         embed.add_field(name="Category", value=category, inline=True)
-
-        tags_text = sections.get("Tags", "")
         if tags_text:
             embed.add_field(name="Tags", value=tags_text, inline=False)
 
         thumbnail = result.get("metadata", {}).get("thumbnail", "")
         if thumbnail:
-            embed.set_image(url=thumbnail)
+            embed.set_thumbnail(url=thumbnail)
 
         embed.set_footer(text=f"MegaMind | {result['date']} | {result['filename']}")
-        await channel.send(embed=embed)
 
-        # 2. Summary
+        # ── Forum channel: create a tagged post ──
+        if isinstance(channel, discord.ForumChannel):
+            thread = await self._post_to_forum(channel, result, embed, category, tags_text)
+        else:
+            # ── Text channel: post embed → create thread ──
+            header_msg = await channel.send(embed=embed)
+            thread_name = result["title"][:100]
+            thread = await header_msg.create_thread(name=thread_name)
+
+        # ── All detail messages go inside the thread ──
+        await self._send_thread_details(thread, sections)
+
+        # ── Budget footer — show cost of this extraction ──
+        try:
+            budget = _load_budget()
+            if budget and budget["history"]:
+                last = budget["history"][-1]
+                await thread.send(
+                    f"-# Cost: ${last['cost']:.4f} | "
+                    f"Session total: ${budget['total_cost']:.4f} "
+                    f"({budget['extraction_count']} extractions)"
+                )
+        except Exception:
+            pass
+
+    async def _post_to_forum(
+        self,
+        forum: discord.ForumChannel,
+        result: dict,
+        embed: discord.Embed,
+        category: str,
+        tags_text: str,
+    ) -> discord.Thread:
+        """Create a tagged forum post. Matches existing forum tags by name."""
+        # Match available forum tags to the extraction's category and tags
+        applied_tags: list[discord.ForumTag] = []
+        available_tags = {t.name.lower(): t for t in forum.available_tags}
+
+        # Try to match category as a tag
+        if category.lower() in available_tags:
+            applied_tags.append(available_tags[category.lower()])
+
+        # Try to match source type
+        source = result["source_type"].lower()
+        if source in available_tags:
+            applied_tags.append(available_tags[source])
+
+        # Try to match individual tags
+        if tags_text:
+            import re as _re
+            tag_names = _re.findall(r"`#([^`]+)`", tags_text)
+            for tag_name in tag_names:
+                if tag_name.lower() in available_tags and len(applied_tags) < 5:
+                    applied_tags.append(available_tags[tag_name.lower()])
+
+        thread_with_msg = await forum.create_thread(
+            name=result["title"][:100],
+            embed=embed,
+            applied_tags=applied_tags[:5],  # Discord limit: 5 tags per post
+        )
+        return thread_with_msg.thread
+
+    async def _send_thread_details(self, thread: discord.Thread, sections: dict):
+        """Send all detail sections into an extraction thread."""
+        # 1. Summary
         summary = sections.get("Summary", "")
         if summary:
-            await channel.send(f"**Summary**\n{summary}")
+            await thread.send(f"**Summary**\n{summary}")
 
-        # 3. Key Insights
+        # 2. Key Insights
         insights = sections.get("Key Insights", "")
         if insights:
-            # Truncate if too long for Discord (2000 char limit)
             text = f"**Key Insights**\n{insights}"
             if len(text) > 1900:
                 text = text[:1900] + "\n..."
-            await channel.send(text)
+            await thread.send(text)
 
-        # 4. Actions
+        # 3. Actions
         actions = sections.get("Actions", "")
         if actions:
             text = f"**Actions**\n{actions}"
             if len(text) > 1900:
                 text = text[:1900] + "\n..."
-            await channel.send(text)
+            await thread.send(text)
 
-        # 5. Individual prompts — each in its own message with code block
+        # 4. Individual prompts — each in its own message with code block
         prompts_section = sections.get("Implementation Prompts", "")
         if prompts_section:
             prompts = parse_prompts(prompts_section)
@@ -280,23 +403,19 @@ class MegaMind(discord.Client):
                 prompt_msg = f"**{prompt['title']}**\n```\n{prompt['body']}\n```"
                 if len(prompt_msg) > 1900:
                     prompt_msg = prompt_msg[:1900] + "\n```"
-                msg = await channel.send(prompt_msg)
-                # Pre-load robot emoji for easy execution queuing
+                msg = await thread.send(prompt_msg)
                 try:
                     await msg.add_reaction("\U0001F916")
                 except discord.HTTPException:
                     pass
 
-        # 6. Links & Resources
+        # 5. Links & Resources
         links = sections.get("Links & Resources", "")
         if links:
             text = f"**Links & Resources**\n{links}"
             if len(text) > 1900:
                 text = text[:1900] + "\n..."
-            await channel.send(text)
-
-        # 7. Separator
-        await channel.send("---")
+            await thread.send(text)
 
     async def _post_error(self, url: str, error_msg: str):
         """Post a failure message to #output."""
@@ -433,6 +552,16 @@ class MegaMind(discord.Client):
                 await self._post_error(video_url, f"YouTube playlist extraction failed: {e}")
 
         return processed_count
+
+
+def _load_budget() -> dict | None:
+    """Load budget summary, returning None if no data yet."""
+    try:
+        from budget import get_summary
+        data = get_summary()
+        return data if data.get("extraction_count", 0) > 0 else None
+    except Exception:
+        return None
 
 
 def _git_commit_sync(result: dict):
