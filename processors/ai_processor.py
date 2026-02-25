@@ -1,5 +1,7 @@
 """AI-powered content processor using Claude API for insight extraction."""
 
+import time
+
 import anthropic
 
 import config
@@ -93,12 +95,22 @@ Title: {result.title}
 
 Analyse this content and produce the structured output as specified."""
 
-    response = client.messages.create(
-        model=config.CLAUDE_MODEL,
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
-    )
+    max_retries = 4
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.messages.create(
+                model=config.CLAUDE_MODEL,
+                max_tokens=4096,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            break
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < max_retries:
+                wait = 2 ** (attempt + 1)  # 2s, 4s, 8s, 16s
+                time.sleep(wait)
+                continue
+            raise
 
     # Track token usage for budget
     try:
