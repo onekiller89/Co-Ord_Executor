@@ -6,3 +6,5 @@ python-dotenv>=1.0.0
 readability-lxml>=0.8.1
 lxml>=5.0.0
 python-telegram-bot>=21.0
+discord.py>=2.3.0
+google-api-python-client>=2.100.0

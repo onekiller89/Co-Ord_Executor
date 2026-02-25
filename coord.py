@@ -23,42 +23,48 @@ from outputs.index import add_to_index, update_status, list_entries
 from outputs.storage import save_extraction
 
 
-def extract_url(url: str) -> None:
-    """Main extraction pipeline for a given URL."""
-    print(f"\n  Co-Ord Executor")
-    print(f"  {'='*40}")
+def run_pipeline(url: str) -> dict:
+    """Run the full extraction pipeline for a URL.
 
-    # 1. Detect source and get extractor
+    Returns a dict with all pipeline outputs for reuse by Discord bot, CLI, etc.
+    """
     extractor, source_type = get_extractor(url)
-    print(f"  Source detected: {source_type.value}")
-    print(f"  Extracting content...")
-
-    # 2. Extract raw content
     result = extractor.extract(url)
-    print(f"  Title: {result.title}")
-    print(f"  Raw content: {len(result.raw_content)} chars")
-
-    # 3. Process through AI
-    print(f"  Processing with AI...")
     processed = process_extraction(result)
-    print(f"  AI processing complete.")
-
-    # 4. Format final document
     document = format_document(result, processed)
     filename = generate_filename(result)
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-    # 5. Save to storage
-    print(f"  Saving extraction...")
     saved = save_extraction(filename, document)
-    for location, path in saved.items():
+    add_to_index(result, processed, filename, date_str)
+
+    return {
+        "result": result,
+        "source_type": source_type,
+        "processed": processed,
+        "document": document,
+        "filename": filename,
+        "date_str": date_str,
+        "saved": saved,
+    }
+
+
+def extract_url(url: str) -> None:
+    """Main extraction pipeline for a given URL (CLI wrapper)."""
+    print(f"\n  Co-Ord Executor")
+    print(f"  {'='*40}")
+    print(f"  Extracting content...")
+
+    pipeline = run_pipeline(url)
+
+    print(f"  Source detected: {pipeline['source_type'].value}")
+    print(f"  Title: {pipeline['result'].title}")
+    print(f"  AI processing complete.")
+
+    for location, path in pipeline["saved"].items():
         print(f"    -> {location}: {path}")
 
-    # 6. Update index
-    add_to_index(result, processed, filename, date_str)
     print(f"  Index updated.")
-
-    print(f"\n  Done! Extraction saved as: {filename}")
+    print(f"\n  Done! Extraction saved as: {pipeline['filename']}")
     print(f"  {'='*40}\n")
 
 

@@ -1,15 +1,25 @@
-# Co-Ord Executor
+# MegaMind — Content Extraction & Knowledge Pipeline
 
-Co-ordinate valuable resources and make them actionable. Drop a URL, get structured markdown with insights, actions, implementation prompts, and links — ready to pick up and execute later.
+Drop a URL into Discord or add a video to your YouTube playlist — MegaMind extracts the content, processes it through AI into structured insights with actionable prompts, and delivers the output to Discord, Obsidian, and a central index. React with a robot emoji to queue a prompt for execution.
 
-## What It Does
+## How It Works
 
-1. **Drop a URL** — YouTube video, X/Twitter thread, GitHub repo, or any article
-2. **Auto-extracts content** — Uses Grok for YouTube/Twitter (platform-aware), scraping for the rest
-3. **AI-processes into structured markdown** — Insights, actions, implementation prompts, links, tags
-4. **Context-aware** — If content relates to Claude Code, prompts are tailored for Claude Code CLI
-5. **Saves everywhere** — To this repo's `extractions/` folder AND your Obsidian vault
-6. **Tracks in a central index** — Categorised, tagged, with status tracking (Backlog → TODO → In Progress → Done)
+```
+INPUT                           PROCESS                         OUTPUT
+─────                           ───────                         ──────
+Discord #extract ──┐                                      ┌──→ Discord #output (embed + prompts)
+  (post any URL)   │                                      │
+                   ├──→ MegaMind Bot ──→ Pipeline ────────┼──→ Obsidian vault (markdown)
+                   │     detect → extract → AI → format   │
+YouTube playlist ──┘     (hourly poll)                    └──→ INDEX.md (central catalogue)
+  (add a video)
+                              │
+                    🤖 React on a prompt
+                              │
+                    Queue → GitHub Issue (execute label)
+                              │
+                    OpenClaw picks up and runs it
+```
 
 ## Quick Start
 
@@ -19,7 +29,7 @@ Co-ordinate valuable resources and make them actionable. Drop a URL, get structu
 git clone https://github.com/onekiller89/Co-Ord_Executor.git
 cd Co-Ord_Executor
 python -m venv .venv
-source .venv/bin/activate  # On WSL/Linux
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -29,62 +39,113 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` with your API keys:
+Edit `.env` with your keys:
 
 | Key | Required | Purpose |
 |-----|----------|---------|
-| `ANTHROPIC_API_KEY` | Yes | Claude API for AI summarisation of articles/GitHub repos |
-| `XAI_API_KEY` | Optional | Grok API for YouTube/Twitter extraction (falls back to manual paste) |
-| `OBSIDIAN_VAULT_PATH` | Optional | Path to your Obsidian vault folder for auto-sync |
+| `ANTHROPIC_API_KEY` | Yes | Claude API for AI processing |
+| `XAI_API_KEY` | Optional | Grok API for YouTube/Twitter extraction |
+| `DISCORD_BOT_TOKEN` | Yes | MegaMind Discord bot token |
+| `DISCORD_SERVER_ID` | Yes | Your Discord server ID |
+| `DISCORD_EXTRACT_CHANNEL_ID` | Yes | Channel ID for `#extract` |
+| `DISCORD_OUTPUT_CHANNEL_ID` | Yes | Channel ID for `#output` |
+| `YOUTUBE_API_KEY` | Optional | YouTube Data API for playlist watcher |
+| `YOUTUBE_EXTRACT_PLAYLIST_ID` | Optional | YouTube playlist to watch |
+| `OBSIDIAN_VAULT_PATH` | Optional | Obsidian vault path for auto-sync |
 
-### 3. Extract
+### 3. Create the Discord bot
+
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. New Application → Bot → copy the token
+3. Enable **MESSAGE CONTENT** intent under Bot → Privileged Gateway Intents
+4. OAuth2 → URL Generator → scopes: `bot` + `applications.commands`
+5. Bot permissions: Send Messages, Embed Links, Read Message History, Add Reactions, Use Slash Commands
+6. Invite to your server using the generated URL
+
+### 4. Run MegaMind
 
 ```bash
-# YouTube video (via Grok)
-python coord.py https://www.youtube.com/watch?v=dQw4w9WgXcQ
-
-# X/Twitter thread (via Grok)
-python coord.py https://x.com/user/status/1234567890
-
-# GitHub repo (scraped + Claude summary)
-python coord.py https://github.com/anthropics/claude-code
-
-# Any article/blog post
-python coord.py https://example.com/great-article
-
-# Manual paste mode (when you already have the content)
-python coord.py --paste youtube
-python coord.py --paste twitter
+python discord_bot.py
 ```
+
+MegaMind will:
+- Watch `#extract` for URLs and process them automatically
+- Poll your YouTube playlist every hour for new videos
+- Post results to `#output` with embedded summaries and code-block prompts
+- Listen for robot emoji reactions on prompts to queue them for execution
 
 ## Usage
 
-```
-python coord.py <URL>                        Extract from URL
-python coord.py --paste <type>               Manual paste (youtube|twitter|github|article)
-python coord.py --list                       Show all extractions
-python coord.py --list --filter "TODO"       Filter by status
-python coord.py --status 3 "In Progress"     Update entry #3 status
-python coord.py --status 5 "Done"            Mark entry #5 as done
+### Discord commands
+
+| Command | Description |
+|---------|-------------|
+| Post a URL in `#extract` | Auto-detected and processed |
+| `/extract <url>` | Manual extraction trigger |
+| `/check` | Force-check YouTube playlist now |
+| `/status` | Show MegaMind stats |
+| React 🤖 on a prompt in `#output` | Queue prompt for execution |
+
+### CLI (still works)
+
+```bash
+python coord.py <URL>                        # Extract from URL
+python coord.py --paste <type>               # Manual paste mode
+python coord.py --list                       # Show all extractions
+python coord.py --list --filter "TODO"       # Filter by status
+python coord.py --status 3 "In Progress"     # Update entry status
 ```
 
 ## Output Format
 
-Every extraction produces a markdown file with:
+### Discord `#output`
+
+1. **Embed** — Title, summary, category, tags, source
+2. **Body** — Key insights, actions, links & resources
+3. **Prompts** — Each implementation prompt in its own message with a code block, reactable with 🤖
+
+### Markdown file (repo + Obsidian)
 
 ```
 # [Title]
-> Source: YouTube | Extracted: 2025-01-15 14:30 UTC | Method: grok_api
+> Source: YouTube | Extracted: 2026-02-25 14:30 UTC | Method: grok_api
 > URL: https://...
 
 ### Summary         — What this content is about
 ### Key Insights    — Bullet list of takeaways
 ### Actions         — Checkbox list of concrete next steps
-### Implementation Prompts — Copy-paste-ready prompts for Claude Code
+### Implementation Prompts — Numbered prompts with code-block-ready text
 ### Links & Resources     — All referenced URLs/tools
 ### Tags            — For categorisation
-### Category        — Primary category
+### Category        — AI-determined (dynamic, not a fixed list)
 ```
+
+## Categories
+
+MegaMind uses AI to dynamically assign the best category — it's not limited to a fixed list. Examples include:
+
+> Claude Code, AI Agents, AI/ML, OpenClaw, Infrastructure as Code, DevOps, Security, Development, Productivity, Finances, Budgeting, Fitness, Mindfulness, Career, Business, Open Source, Kubernetes, Data Engineering, Automation, Homelab, Leadership...
+
+If none of the common categories fit, the AI creates a new one.
+
+## YouTube Playlist Watcher
+
+1. Create an **unlisted** YouTube playlist called "extract"
+2. Get the playlist ID from the URL (`list=PLAYLIST_ID`)
+3. Set `YOUTUBE_API_KEY` and `YOUTUBE_EXTRACT_PLAYLIST_ID` in `.env`
+4. MegaMind polls hourly (configurable via `YOUTUBE_POLL_INTERVAL_MINUTES`)
+5. New videos are posted to `#extract` for audit trail, then processed
+6. Use `/check` in Discord to trigger an immediate check
+
+## Execution Queue (Phase 1)
+
+React with 🤖 on any prompt message in `#output` to queue it:
+
+1. MegaMind captures the prompt text from the code block
+2. Creates a GitHub Issue with the `execute` label
+3. Posts confirmation back to `#output`
+
+**Phase 2 (planned):** OpenClaw picks up `execute` issues and runs them autonomously.
 
 ## Central Index
 
@@ -92,175 +153,82 @@ All extractions are tracked in [`extractions/INDEX.md`](extractions/INDEX.md):
 
 | # | Title | Source | Category | Tags | Status | Date | File |
 |---|-------|--------|----------|------|--------|------|------|
-| 1 | Claude Code Tips | YouTube | Claude Code | `#claude-code` | Backlog | 2025-01-15 | [view](./2025-01-15_claude-code-tips.md) |
-| 2 | AI Agents Thread | Twitter/X | AI/ML | `#agents` | TODO | 2025-01-16 | [view](./2025-01-16_ai-agents-thread.md) |
+| 1 | Claude Code Tips | YouTube | Claude Code | `#claude-code` | Backlog | 2026-02-25 | [view](./2026-02-25_claude-code-tips.md) |
 
 Status workflow: **Backlog** → **TODO** → **In Progress** → **Done**
 
-## Mobile Capture
+## Cross-Device Access
 
-Drop URLs from your phone — they get processed automatically via GitHub Actions.
+| Device | Input | View Output |
+|--------|-------|-------------|
+| Mobile | Discord app → `#extract` | Discord app → `#output` |
+| Personal PC | Discord + YouTube playlist + CLI | Obsidian + Discord + git pull |
+| Work desktop | Discord web → `#extract` | Discord web → `#output` + Obsidian |
 
-### Option A: GitHub Mobile App (no setup needed)
-
-1. Install the [GitHub mobile app](https://github.com/mobile)
-2. Open the Co-Ord_Executor repo
-3. Create a new issue — paste the URL as the title
-4. Add the `extract` label
-5. GitHub Actions processes it, commits the extraction, and closes the issue
-
-**Tip:** On your phone, use the share sheet → "Copy link" → open GitHub app → new issue → paste.
-
-### Option B: Telegram Bot (lowest friction)
-
-Share/forward URLs directly from any app to your personal Telegram bot.
-
-**Setup:**
-
-1. Message [@BotFather](https://t.me/BotFather) on Telegram → `/newbot` → save the token
-2. Create a [GitHub Personal Access Token](https://github.com/settings/tokens) with `repo` scope
-3. Add to `.env`:
-   ```
-   TELEGRAM_BOT_TOKEN=your-bot-token
-   GITHUB_TOKEN=ghp_your-github-pat
-   GITHUB_REPO=onekiller89/Co-Ord_Executor
-   TELEGRAM_ALLOWED_USERS=your_telegram_username
-   ```
-4. Run the bot on your WSL machine:
-   ```bash
-   python telegram_bot.py
-   ```
-5. Send any URL to your bot on Telegram — it creates a GitHub Issue, which GitHub Actions processes
-
-### GitHub Actions Setup
-
-The workflow triggers automatically when issues are created with the `extract` label. To enable it:
-
-1. Go to your repo → Settings → Secrets and variables → Actions
-2. Add these repository secrets:
-   - `ANTHROPIC_API_KEY` — your Claude API key
-   - `XAI_API_KEY` — your Grok API key (needed for YouTube/Twitter URLs)
-
-### Mobile Capture Flow
+## Architecture
 
 ```
-Phone → Share URL → GitHub Mobile App (creates issue)
-                  → Telegram Bot (creates issue automatically)
-                           │
-                           ▼
-                GitHub Actions picks up issue
-                           │
-                           ▼
-                Runs coord.py extraction in the cloud
-                           │
-                           ▼
-                Commits result, updates INDEX.md, closes issue
+Discord #extract ──────────────┐
+  (URL posted)                 │
+                               ▼
+YouTube "extract" playlist ──→ MegaMind Bot (runs on personal PC)
+  (hourly poll)                │
+                               ├─→ Source Detector (YouTube/Twitter/GitHub/Article)
+                               ├─→ Content Extractor (Grok API / scraping)
+                               ├─→ AI Processor (Claude → insights + prompts)
+                               ├─→ Formatter (structured markdown)
+                               │
+                               ├─→ Discord #output (embed + prompt messages)
+                               ├─→ Obsidian vault (MegaMind/Output/)
+                               ├─→ extractions/ (git commit + push)
+                               └─→ INDEX.md (central catalogue)
+
+🤖 React on prompt ──→ GitHub Issue (execute label) ──→ OpenClaw (Phase 2)
 ```
 
-```
-Phone                          Cloud                         Desktop
-─────                          ─────                         ───────
-Share URL
-  ├→ GitHub App → Issue ──→ GitHub Actions ──→ Extraction
-  └→ Telegram Bot ─────┘      runs coord.py    committed
-                               updates INDEX    to repo
-                               closes issue
-                                                        git pull
-                                                        Obsidian sync
-                                                        Pick up & implement
-```
-
-## How Extraction Works
-
-### Extraction Pipeline
-
-```
-  URL
-   │
-   ▼
-┌──────────────────┐
-│  Source Detector  │  Identifies: YouTube / Twitter / GitHub / Article
-└────────┬─────────┘
-         │
-         ▼
-┌──────────────────┐
-│    Extractors     │  YouTube/Twitter → Grok API (or manual paste)
-│                   │  GitHub → GitHub API + README scrape
-│                   │  Article → readability-lxml + BeautifulSoup
-└────────┬─────────┘
-         │ raw content
-         ▼
-┌──────────────────┐
-│   AI Processor    │  Claude API with context-aware system prompt
-│                   │  Extracts: Summary, Insights, Actions,
-│                   │  Implementation Prompts, Links, Tags, Category
-└────────┬─────────┘
-         │ structured markdown
-         ▼
-┌──────────────────┐
-│     Outputs       │  Formats final document
-│                   │  Saves to repo + Obsidian vault
-│                   │  Updates INDEX.md tracker
-└──────────────────┘
-```
-
-### Architecture
-
-| Layer | What it does |
-|-------|-------------|
-| **Extractors** (`extractors/`) | Detects source type from URL, pulls raw content (Grok API for YouTube/Twitter with manual paste fallback, GitHub API + scraping, readability for articles) |
-| **AI Processor** (`processors/ai_processor.py`) | Sends raw content to Claude API with a context-aware system prompt. Extracts: Summary, Key Insights, Actions (checkboxes), Implementation Prompts (copy-paste ready), Links, Tags, Category |
-| **Outputs** (`outputs/`) | Formats into standardized markdown, saves to `extractions/` + Obsidian vault, updates `INDEX.md` tracker |
-
-| Source | Extraction Method | AI Processing |
-|--------|-------------------|---------------|
-| YouTube | Grok API (or manual paste) | Claude structures insights |
-| Twitter/X | Grok API (or manual paste) | Claude structures insights |
-| GitHub | GitHub API + README scrape | Claude summarises & extracts |
-| Article | readability-lxml + BeautifulSoup | Claude structures insights |
-
-**Context awareness:** When content mentions Claude Code, Anthropic, MCP, or similar tools, the Implementation Prompts section is automatically tailored with Claude Code-specific commands, slash commands, hooks, and CLAUDE.md patterns.
-
-## Obsidian Integration
-
-Set `OBSIDIAN_VAULT_PATH` in `.env` to your vault's target folder. Every extraction is automatically copied there, ready to browse in Obsidian with full tag support.
-
-Example:
-```
-OBSIDIAN_VAULT_PATH=/mnt/c/Users/YourName/Documents/Obsidian/Co-Ord
-```
+| Layer | Components |
+|-------|-----------|
+| **Input** | Discord `#extract` channel, YouTube playlist watcher, `/extract` slash command, CLI |
+| **Extractors** | YouTube/Twitter via Grok API, GitHub via API, Articles via readability-lxml |
+| **AI Processor** | Claude API — dynamic categories, numbered implementation prompts |
+| **Output** | Discord `#output`, Obsidian vault, GitHub repo, INDEX.md |
+| **Execution** | 🤖 react → GitHub Issue → OpenClaw (Phase 2) |
 
 ## Project Structure
 
 ```
 Co-Ord_Executor/
-├── coord.py              # CLI entry point
-├── telegram_bot.py       # Telegram bot for mobile URL capture
-├── config.py             # Configuration (.env, paths, API keys)
-├── requirements.txt      # Python dependencies
-├── .env.example          # Template for API keys and config
+├── discord_bot.py            # MegaMind Discord bot (primary interface)
+├── coord.py                  # CLI entry point + reusable pipeline
+├── config.py                 # Configuration (.env, paths, API keys)
+├── requirements.txt          # Python dependencies
+├── .env.example              # Template for all config
+├── telegram_bot.py           # Legacy Telegram bot (replaced by Discord)
 ├── .github/workflows/
-│   └── extract.yml       # GitHub Actions extraction workflow
+│   └── extract.yml           # GitHub Actions extraction workflow
 ├── extractors/
-│   ├── detector.py       # URL → source type detection
-│   ├── base.py           # Base extractor interface
-│   ├── youtube.py        # YouTube via Grok API / manual paste
-│   ├── twitter.py        # Twitter/X via Grok API / manual paste
-│   ├── github.py         # GitHub via API + scraping
-│   └── article.py        # Articles via readability + scraping
+│   ├── detector.py           # URL → source type detection
+│   ├── base.py               # Base extractor interface
+│   ├── youtube.py            # YouTube via Grok API / manual paste
+│   ├── twitter.py            # Twitter/X via Grok API / manual paste
+│   ├── github.py             # GitHub via API + scraping
+│   └── article.py            # Articles via readability + scraping
 ├── processors/
-│   └── ai_processor.py   # Claude API insight extraction
+│   └── ai_processor.py       # Claude API — dynamic categories + prompts
 ├── outputs/
-│   ├── formatter.py      # Markdown document formatting
-│   ├── index.py          # Central INDEX.md management
-│   └── storage.py        # File storage (repo + Obsidian)
+│   ├── formatter.py          # Markdown formatting + section parser
+│   ├── index.py              # Central INDEX.md management
+│   └── storage.py            # File storage (repo + Obsidian)
+├── watchers/
+│   └── youtube_playlist.py   # YouTube playlist monitor
 └── extractions/
-    └── INDEX.md          # Centralised extraction tracker
+    └── INDEX.md              # Centralised extraction tracker
 ```
 
 ## Requirements
 
 - Python 3.11+
-- Windows 11 / WSL
-- Anthropic API key (for Claude summarisation)
-- xAI API key (optional, for Grok YouTube/Twitter extraction)
+- Anthropic API key (Claude)
+- Discord bot token
+- xAI API key (optional, for YouTube/Twitter via Grok)
+- YouTube Data API key (optional, for playlist watcher)
