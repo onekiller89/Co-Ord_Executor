@@ -7,3 +7,4 @@ venv/
 dist/
 build/
 .mypy_cache/
+.youtube_processed.json

@@ -33,3 +33,19 @@ USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
+
+# === Discord (MegaMind bot) ===
+DISCORD_BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
+DISCORD_SERVER_ID = int(os.getenv("DISCORD_SERVER_ID", "0"))
+DISCORD_EXTRACT_CHANNEL_ID = int(os.getenv("DISCORD_EXTRACT_CHANNEL_ID", "0"))
+DISCORD_OUTPUT_CHANNEL_ID = int(os.getenv("DISCORD_OUTPUT_CHANNEL_ID", "0"))
+
+# === YouTube Playlist Watcher ===
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
+YOUTUBE_EXTRACT_PLAYLIST_ID = os.getenv("YOUTUBE_EXTRACT_PLAYLIST_ID", "")
+YOUTUBE_COMPLETED_PLAYLIST_ID = os.getenv("YOUTUBE_COMPLETED_PLAYLIST_ID", "")
+YOUTUBE_POLL_INTERVAL = int(os.getenv("YOUTUBE_POLL_INTERVAL", "3600"))  # seconds, default 1 hour
+
+# === GitHub (for execute queue) ===
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "onekiller89/Co-Ord_Executor")

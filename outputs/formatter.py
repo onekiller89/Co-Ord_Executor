@@ -53,3 +53,67 @@ def generate_filename(result: ExtractionResult) -> str:
     safe_title = re.sub(r"\s+", "-", safe_title).strip("-").lower()
     safe_title = safe_title[:60]  # Keep it reasonable length
     return f"{date_str}_{safe_title}.md"
+
+
+def parse_sections(processed_content: str) -> dict[str, str]:
+    """Split AI-processed content into named sections.
+
+    Returns dict like {"Summary": "...", "Key Insights": "...", ...}
+    """
+    sections = {}
+    current_key = None
+    current_lines = []
+
+    for line in processed_content.split("\n"):
+        heading_match = re.match(r"^###\s+(.+)$", line)
+        if heading_match:
+            if current_key:
+                sections[current_key] = "\n".join(current_lines).strip()
+            current_key = heading_match.group(1).strip()
+            current_lines = []
+        elif current_key is not None:
+            current_lines.append(line)
+
+    if current_key:
+        sections[current_key] = "\n".join(current_lines).strip()
+
+    return sections
+
+
+def parse_prompts(prompts_section: str) -> list[dict]:
+    """Parse the Implementation Prompts section into individual prompts.
+
+    Returns list of dicts: [{"title": "...", "body": "..."}, ...]
+    """
+    prompts = []
+    current_title = None
+    current_lines = []
+
+    for line in prompts_section.split("\n"):
+        prompt_heading = re.match(r"^####\s+Prompt\s+\d+:\s*(.+)$", line)
+        if prompt_heading:
+            if current_title:
+                prompts.append({
+                    "title": current_title,
+                    "body": "\n".join(current_lines).strip().strip(">").strip(),
+                })
+            current_title = prompt_heading.group(1).strip()
+            current_lines = []
+        elif current_title is not None:
+            current_lines.append(line)
+
+    if current_title:
+        prompts.append({
+            "title": current_title,
+            "body": "\n".join(current_lines).strip().strip(">").strip(),
+        })
+
+    # Fallback: if no #### Prompt N: headings found, split on blockquotes
+    if not prompts and prompts_section.strip():
+        blocks = re.split(r"\n(?=>)", prompts_section)
+        for i, block in enumerate(blocks, 1):
+            body = block.strip().strip(">").strip()
+            if body:
+                prompts.append({"title": f"Prompt {i}", "body": body})
+
+    return prompts
