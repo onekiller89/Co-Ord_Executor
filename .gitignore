@@ -7,3 +7,7 @@ venv/
 dist/
 build/
 .mypy_cache/
+.youtube_processed.json
+client_secret.json
+youtube_token.json
+api_budget.json

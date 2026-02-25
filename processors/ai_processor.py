@@ -7,7 +7,7 @@ from extractors.base import ExtractionResult
 
 
 SYSTEM_PROMPT = """\
-You are Co-Ord Executor — an AI assistant that transforms raw content extractions into \
+You are MegaMind — an AI assistant that transforms raw content extractions into \
 structured, actionable knowledge documents.
 
 Your job is to analyse the extracted content and produce a structured output with these \
@@ -30,7 +30,15 @@ Use "- [ ]" checkbox format.
 ### Implementation Prompts
 Ready-to-use prompts that can be pasted directly into an AI assistant (like Claude Code) \
 to implement the actions above. Each prompt should be specific, self-contained, and \
-produce a useful result. Format each as a blockquote.
+produce a useful result. Number each prompt clearly as:
+
+#### Prompt 1: [Short descriptive title]
+> [The actual prompt text here]
+
+#### Prompt 2: [Short descriptive title]
+> [The actual prompt text here]
+
+Continue numbering for all prompts.
 
 ### Links & Resources
 All URLs, tools, libraries, repos, and resources mentioned or referenced. \
@@ -40,8 +48,14 @@ Format as markdown links. Include the original source URL.
 Suggest 3-6 lowercase tags for categorisation. Format as: `#tag1` `#tag2` `#tag3`
 
 ### Category
-Suggest ONE primary category from: AI/ML, Development, DevOps, Productivity, \
-Claude Code, Security, Design, Career, Business, Open Source, Other.
+Suggest ONE primary category. Choose the most specific and accurate category for the \
+content. You are NOT limited to a fixed list — pick whatever best describes the content. \
+Examples include but are not limited to: Claude Code, AI Agents, OpenClaw, \
+Infrastructure as Code, DevOps, Security, Development, Productivity, Finances, Budgeting, \
+Fitness, Mindfulness, Career, Business, Open Source, Machine Learning, Automation, \
+Data Engineering, Cloud Architecture, Leadership, Communication, etc. \
+If none of the examples fit, create a new category that accurately describes the content. \
+Output just the category name, nothing else.
 
 ## Context-awareness rules:
 - If the content relates to Claude, Claude Code, Anthropic, MCP, or similar: \
@@ -86,6 +100,19 @@ Analyse this content and produce the structured output as specified."""
         messages=[{"role": "user", "content": user_message}],
     )
 
+    # Track token usage for budget
+    try:
+        from budget import record_usage
+        record_usage(
+            model=config.CLAUDE_MODEL,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            api="anthropic",
+            title=result.title,
+        )
+    except Exception:
+        pass  # Don't let budget tracking break extraction
+
     return response.content[0].text
 
 
@@ -113,6 +140,7 @@ Content extracted from {result.source_type}: {result.title}
 - [ ] Set up ANTHROPIC_API_KEY for automatic AI processing
 
 ### Implementation Prompts
+#### Prompt 1: Configure API Key
 > No AI processing available. Configure your API key to enable this feature.
 
 ### Links & Resources

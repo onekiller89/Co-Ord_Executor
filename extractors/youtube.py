@@ -28,10 +28,11 @@ class YouTubeExtractor(BaseExtractor):
     def extract(self, url: str) -> ExtractionResult:
         video_id = extract_video_id(url)
         canonical_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
+        thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg" if video_id else ""
 
         # Try Grok API first
         if config.XAI_API_KEY:
-            return self._extract_via_grok(canonical_url)
+            return self._extract_via_grok(canonical_url, thumbnail_url)
 
         # In CI mode, can't prompt for input
         if config.CI_MODE:
@@ -41,9 +42,9 @@ class YouTubeExtractor(BaseExtractor):
             )
 
         # Fall back to manual paste
-        return self._extract_via_paste(canonical_url)
+        return self._extract_via_paste(canonical_url, thumbnail_url)
 
-    def _extract_via_grok(self, url: str) -> ExtractionResult:
+    def _extract_via_grok(self, url: str, thumbnail_url: str = "") -> ExtractionResult:
         """Use Grok API to extract video content."""
         client = OpenAI(
             api_key=config.XAI_API_KEY,
@@ -59,6 +60,21 @@ class YouTubeExtractor(BaseExtractor):
         )
 
         content = response.choices[0].message.content
+
+        # Track Grok token usage for budget
+        try:
+            from budget import record_usage
+            if response.usage:
+                record_usage(
+                    model=config.GROK_MODEL,
+                    input_tokens=response.usage.prompt_tokens or 0,
+                    output_tokens=response.usage.completion_tokens or 0,
+                    api="grok",
+                    title=url,
+                )
+        except Exception:
+            pass
+
         # Try to parse title from first line of response
         lines = content.strip().split("\n")
         title = lines[0].strip().lstrip("#").strip() if lines else "Untitled Video"
@@ -71,10 +87,10 @@ class YouTubeExtractor(BaseExtractor):
             url=url,
             source_type="YouTube",
             raw_content=content,
-            metadata={"extraction_method": "grok_api"},
+            metadata={"extraction_method": "grok_api", "thumbnail": thumbnail_url},
         )
 
-    def _extract_via_paste(self, url: str) -> ExtractionResult:
+    def _extract_via_paste(self, url: str, thumbnail_url: str = "") -> ExtractionResult:
         """Prompt user to paste Grok output manually."""
         print(f"\n{'='*60}")
         print(f"  MANUAL EXTRACTION: YouTube Video")
@@ -122,5 +138,5 @@ class YouTubeExtractor(BaseExtractor):
             url=url,
             source_type="YouTube",
             raw_content=content,
-            metadata={"extraction_method": "manual_paste"},
+            metadata={"extraction_method": "manual_paste", "thumbnail": thumbnail_url},
         )

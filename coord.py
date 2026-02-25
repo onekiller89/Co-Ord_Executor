@@ -23,25 +23,19 @@ from outputs.index import add_to_index, update_status, list_entries
 from outputs.storage import save_extraction
 
 
-def extract_url(url: str) -> None:
-    """Main extraction pipeline for a given URL."""
-    print(f"\n  Co-Ord Executor")
-    print(f"  {'='*40}")
+def run_pipeline(url: str) -> dict:
+    """Reusable extraction pipeline. Returns structured result dict.
 
+    Used by both the CLI and the Discord bot.
+    """
     # 1. Detect source and get extractor
     extractor, source_type = get_extractor(url)
-    print(f"  Source detected: {source_type.value}")
-    print(f"  Extracting content...")
 
     # 2. Extract raw content
     result = extractor.extract(url)
-    print(f"  Title: {result.title}")
-    print(f"  Raw content: {len(result.raw_content)} chars")
 
     # 3. Process through AI
-    print(f"  Processing with AI...")
     processed = process_extraction(result)
-    print(f"  AI processing complete.")
 
     # 4. Format final document
     document = format_document(result, processed)
@@ -49,16 +43,38 @@ def extract_url(url: str) -> None:
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # 5. Save to storage
-    print(f"  Saving extraction...")
     saved = save_extraction(filename, document)
-    for location, path in saved.items():
-        print(f"    -> {location}: {path}")
 
     # 6. Update index
     add_to_index(result, processed, filename, date_str)
-    print(f"  Index updated.")
 
-    print(f"\n  Done! Extraction saved as: {filename}")
+    return {
+        "title": result.title,
+        "url": result.url,
+        "source_type": source_type.value,
+        "processed": processed,
+        "document": document,
+        "filename": filename,
+        "saved_to": saved,
+        "date": date_str,
+        "metadata": result.metadata,
+    }
+
+
+def extract_url(url: str) -> None:
+    """CLI extraction pipeline for a given URL."""
+    print(f"\n  Co-Ord Executor")
+    print(f"  {'='*40}")
+    print(f"  Extracting: {url}")
+
+    result = run_pipeline(url)
+
+    print(f"  Source: {result['source_type']}")
+    print(f"  Title: {result['title']}")
+    for location, path in result["saved_to"].items():
+        print(f"    -> {location}: {path}")
+    print(f"  Index updated.")
+    print(f"\n  Done! Extraction saved as: {result['filename']}")
     print(f"  {'='*40}\n")
 
 
