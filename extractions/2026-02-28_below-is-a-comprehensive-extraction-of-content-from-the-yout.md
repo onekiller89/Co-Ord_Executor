@@ -1,60 +1,66 @@
-![banner](https://img.youtube.com/vi/6MBq1paspVU/maxresdefault.jpg)
+![banner](https://img.youtube.com/vi/_gPODg6br5w/maxresdefault.jpg)
 
-# Below is a comprehensive extraction of content from the YouTube video with the URL https://www.youtube.com/watch?v=6MBq1paspVU. I have structured the information as requested, covering all specified aspects of the video content.
+# Below is a comprehensive extraction of content from the YouTube video with the URL https://www.youtube.com/watch?v=_gPODg6br5w. I have structured the information as requested, covering all specified aspects of the video.
 
-> **Source:** YouTube | **Extracted:** 2026-02-28 14:06 UTC | **Method:** grok_api
-> **URL:** https://www.youtube.com/watch?v=6MBq1paspVU
+> **Source:** YouTube | **Extracted:** 2026-02-28 14:07 UTC | **Method:** grok_api
+> **URL:** https://www.youtube.com/watch?v=_gPODg6br5w
 
 ---
 
 ### Summary
-Anthony Shaw introduces Python 3.13's experimental JIT compiler, a significant performance enhancement that uses a "copy-and-patch" mechanism to compile frequently executed code paths into machine code at runtime. The JIT shows 2-9% average performance improvements with some workloads seeing up to 50% gains, though it comes with trade-offs like increased memory usage and startup time. This represents a major step toward closing Python's performance gap with JIT-enabled languages like JavaScript and Java.
+This comprehensive tutorial demonstrates building a custom ChatGPT-like chatbot using OpenAI's API integrated with Next.js 14. The creator walks through the complete process from project setup to deployment, covering API integration, streaming responses with Vercel's AI SDK, secure environment variable management, and creating a polished UI with Tailwind CSS and shadcn/ui components.
 
 ### Key Insights
-• Python 3.13's JIT compiler is built into CPython (not a separate implementation like PyPy), making advanced performance optimization accessible to mainstream Python users
-• The "copy-and-patch" JIT method identifies "hot" code paths during execution and compiles them to machine code while leaving infrequent code interpreted
-• Performance gains are most significant for long-running applications (web servers, ML workloads) rather than short scripts due to compilation overhead
-• Memory usage increases due to storing compiled machine code alongside interpreted bytecode
-• The JIT is experimental in 3.13 and disabled by default, but may become standard in Python 3.14 or 3.15
-• Combined with other initiatives like GIL removal and the "faster CPython" project, Python performance could see dramatic improvements in coming releases
-• Benchmark results show 2-9% average improvements with some specific workloads achieving 50% performance gains
+• Next.js 14's App Router provides efficient server-side rendering and API handling for AI applications
+• Streaming responses using Vercel's AI SDK prevents UI blocking and creates a smooth ChatGPT-like experience
+• Security is paramount - never hardcode API keys in frontend code, always use environment variables
+• The `useChat` hook from Vercel's AI SDK simplifies message management and streaming integration
+• Real-time loading states and error handling are essential for professional chatbot UX
+• OpenAI API costs are token-based, requiring monitoring through the OpenAI dashboard
+• The architecture is highly extensible for custom prompts, different models, and enhanced features
 
 ### Actions
-- [ ] Download and install Python 3.13 from python.org to access the experimental JIT compiler
-- [ ] Set up environment variable `PYTHON_JIT=1` to enable JIT compilation for testing
-- [ ] Benchmark your existing long-running Python applications with and without JIT enabled
-- [ ] Install pyperformance benchmark suite to measure JIT impact systematically
-- [ ] Monitor memory usage and startup times when JIT is enabled to understand trade-offs
-- [ ] Test JIT specifically on CPU-intensive workloads like mathematical computations or data processing
-- [ ] Document performance results and consider sharing feedback with the Python core team
-- [ ] Evaluate whether your applications would benefit from JIT based on execution patterns (long-running vs short scripts)
+- [ ] Set up a new Next.js 14 project with TypeScript and Tailwind CSS enabled
+- [ ] Obtain an OpenAI API key from platform.openai.com and set up billing
+- [ ] Install Vercel's AI SDK and shadcn/ui components for the project
+- [ ] Create a secure `.env.local` file and add the OpenAI API key
+- [ ] Build the API route at `app/api/chat/route.ts` for OpenAI integration
+- [ ] Implement the frontend chat interface with message history and input form
+- [ ] Add proper error handling for API failures and empty message validation
+- [ ] Test the chatbot locally and verify streaming responses work correctly
+- [ ] Monitor API usage and costs through the OpenAI dashboard
+- [ ] Consider deployment to Vercel or similar platforms
 
 ### Implementation Prompts
 
-#### Prompt 1: Create a JIT Performance Testing Script
-> Create a Python script that benchmarks the performance difference between JIT-enabled and regular Python execution. The script should include CPU-intensive tasks like mathematical calculations, loop operations, and recursive functions. Include timing measurements, memory usage tracking, and a report that shows percentage improvements. Make it easy to run with and without the PYTHON_JIT=1 environment variable.
+#### Prompt 1: Set up Next.js 14 chatbot project structure
+> Create a complete Next.js 14 project structure for a chatbot application. Include the following files with boilerplate code: `package.json` with necessary dependencies (next, react, typescript, tailwindcss, ai, openai-edge), `app/layout.tsx` for the root layout, `app/globals.css` with Tailwind imports, `tailwind.config.js` with proper configuration, and `.env.local.example` showing required environment variables. Make it production-ready with proper TypeScript types.
 
-#### Prompt 2: JIT Evaluation Framework for Existing Codebase
-> Help me create a framework to evaluate whether my existing Python codebase would benefit from Python 3.13's JIT compiler. The framework should analyze code patterns, identify hot paths, estimate long-running vs short-lived processes, and provide recommendations on whether to enable JIT. Include profiling integration and automated testing scenarios.
+#### Prompt 2: Create OpenAI API route with streaming
+> Write a complete Next.js 14 API route at `app/api/chat/route.ts` that integrates with OpenAI's gpt-3.5-turbo model. Include streaming responses using Vercel's AI SDK, proper error handling for invalid API keys, message history support, and a customizable system prompt. Add TypeScript types and comprehensive error messages for debugging.
 
-#### Prompt 3: Python 3.13 Migration Assessment Tool
-> Create a comprehensive assessment tool that analyzes my current Python project for Python 3.13 JIT readiness. Include compatibility checking, performance prediction based on code patterns, migration steps, and a cost-benefit analysis considering memory usage vs speed improvements. Output should be a detailed migration plan.
+#### Prompt 3: Build the chatbot frontend interface
+> Create a complete React component for the chatbot interface using Vercel's `useChat` hook. Include message history display with user/AI message styling, input form with submission handling, loading states, empty message validation, auto-scrolling to latest messages, and responsive design using Tailwind CSS. Make it visually similar to ChatGPT's interface.
 
-#### Prompt 4: JIT Performance Monitoring Dashboard
-> Design a monitoring solution that tracks the performance impact of Python 3.13's JIT compiler in production environments. Include metrics collection for execution speed, memory usage, startup times, and hot path identification. Create alerts for performance regressions and reports comparing JIT vs non-JIT performance over time.
+#### Prompt 4: Add advanced error handling and UX improvements
+> Enhance the chatbot with advanced error handling including API rate limiting, network errors, and invalid responses. Add features like message timestamps, copy message functionality, clear conversation button, typing indicators, and message character limits. Include proper accessibility attributes and keyboard navigation support.
+
+#### Prompt 5: Create deployment configuration
+> Generate deployment configuration files for Vercel including `vercel.json`, environment variable setup instructions, and a comprehensive README.md with setup instructions, API key configuration, local development commands, and troubleshooting guide. Include security best practices and cost monitoring tips.
 
 ### Links & Resources
-• [Python 3.13 Official Downloads](https://www.python.org/downloads/)
-• [PyPy Alternative Python Implementation](https://www.pypy.org/)
-• [CPython GitHub Repository](https://github.com/python/cpython)
-• [Python Performance Benchmark Suite](https://github.com/python/pyperformance)
-• [Original YouTube Video](https://www.youtube.com/watch?v=6MBq1paspVU)
+• [OpenAI Platform](https://platform.openai.com/) - Get API keys and manage usage
+• [OpenAI API Keys Dashboard](https://platform.openai.com/account/api-keys) - Manage API access
+• [Vercel AI SDK](https://sdk.vercel.ai/) - Documentation for AI SDK
+• [shadcn/ui](https://ui.shadcn.com/) - Component library for polished UI
+• [Original Video Tutorial](https://www.youtube.com/watch?v=_gPODg6br5w) - Full tutorial walkthrough
+• [Coding in Flow Channel](https://www.youtube.com/@CodingInFlow) - Creator's YouTube channel
 
 ### Tags
-`#python` `#jit-compiler` `#performance` `#python3.13` `#optimization` `#cpython`
+`#nextjs` `#openai` `#chatbot` `#ai-integration` `#streaming` `#typescript`
 
 ### Category
-Python Development
+AI Development
 
 ---
 
