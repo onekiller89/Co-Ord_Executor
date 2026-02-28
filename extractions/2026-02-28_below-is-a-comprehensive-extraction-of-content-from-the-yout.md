@@ -1,66 +1,66 @@
-![banner](https://img.youtube.com/vi/_gPODg6br5w/maxresdefault.jpg)
+![banner](https://img.youtube.com/vi/EZdSVpgtjG0/maxresdefault.jpg)
 
-# Below is a comprehensive extraction of content from the YouTube video with the URL https://www.youtube.com/watch?v=_gPODg6br5w. I have structured the information as requested, covering all specified aspects of the video.
+# Below is a comprehensive extraction of content from the YouTube video with the URL https://www.youtube.com/watch?v=EZdSVpgtjG0. The information is structured for clarity and completeness.
 
-> **Source:** YouTube | **Extracted:** 2026-02-28 14:07 UTC | **Method:** grok_api
-> **URL:** https://www.youtube.com/watch?v=_gPODg6br5w
+> **Source:** YouTube | **Extracted:** 2026-02-28 14:08 UTC | **Method:** grok_api
+> **URL:** https://www.youtube.com/watch?v=EZdSVpgtjG0
 
 ---
 
 ### Summary
-This comprehensive tutorial demonstrates building a custom ChatGPT-like chatbot using OpenAI's API integrated with Next.js 14. The creator walks through the complete process from project setup to deployment, covering API integration, streaming responses with Vercel's AI SDK, secure environment variable management, and creating a polished UI with Tailwind CSS and shadcn/ui components.
+This beginner-friendly Python tutorial demonstrates how to perform data analysis and visualization using key libraries like Pandas, Matplotlib, and Seaborn. The tutorial walks through a complete data analysis workflow using a video game sales dataset, covering data loading, exploration, cleaning, analysis, and visualization. It emphasizes Python's accessibility and powerful library ecosystem for data analysis, making it an ideal starting point for aspiring data analysts.
 
 ### Key Insights
-• Next.js 14's App Router provides efficient server-side rendering and API handling for AI applications
-• Streaming responses using Vercel's AI SDK prevents UI blocking and creates a smooth ChatGPT-like experience
-• Security is paramount - never hardcode API keys in frontend code, always use environment variables
-• The `useChat` hook from Vercel's AI SDK simplifies message management and streaming integration
-• Real-time loading states and error handling are essential for professional chatbot UX
-• OpenAI API costs are token-based, requiring monitoring through the OpenAI dashboard
-• The architecture is highly extensible for custom prompts, different models, and enhanced features
+• Python's combination of simplicity, extensive library support, and large community makes it the preferred choice for data analysis over tools like Excel or R
+• The standard data analysis workflow follows a clear pattern: load → explore → clean → analyze → visualize → interpret
+• Pandas is essential for data manipulation and works seamlessly with CSV files and tabular data
+• Data visualization with Matplotlib and Seaborn reveals patterns and trends that aren't obvious from raw numbers
+• Data cleaning (handling missing values) is a critical step that directly impacts analysis quality
+• Grouping and aggregation operations are fundamental for extracting business insights from datasets
+• Career opportunities in data analysis are abundant, with Python skills being highly valued across industries
+• Jupyter Notebook provides an ideal interactive environment for data analysis projects
 
 ### Actions
-- [ ] Set up a new Next.js 14 project with TypeScript and Tailwind CSS enabled
-- [ ] Obtain an OpenAI API key from platform.openai.com and set up billing
-- [ ] Install Vercel's AI SDK and shadcn/ui components for the project
-- [ ] Create a secure `.env.local` file and add the OpenAI API key
-- [ ] Build the API route at `app/api/chat/route.ts` for OpenAI integration
-- [ ] Implement the frontend chat interface with message history and input form
-- [ ] Add proper error handling for API failures and empty message validation
-- [ ] Test the chatbot locally and verify streaming responses work correctly
-- [ ] Monitor API usage and costs through the OpenAI dashboard
-- [ ] Consider deployment to Vercel or similar platforms
+- [ ] Install Python and set up Jupyter Notebook environment for data analysis
+- [ ] Install essential data analysis libraries: pandas, matplotlib, seaborn, numpy
+- [ ] Download a sample dataset (CSV format) to practice with
+- [ ] Practice the complete workflow: load data → explore → clean → analyze → visualize
+- [ ] Create your first data visualization using the video game sales dataset or similar
+- [ ] Learn to identify and handle missing data in real datasets
+- [ ] Practice groupby operations to aggregate data and find insights
+- [ ] Build a portfolio project following the tutorial structure
+- [ ] Explore additional datasets to reinforce learning
 
 ### Implementation Prompts
 
-#### Prompt 1: Set up Next.js 14 chatbot project structure
-> Create a complete Next.js 14 project structure for a chatbot application. Include the following files with boilerplate code: `package.json` with necessary dependencies (next, react, typescript, tailwindcss, ai, openai-edge), `app/layout.tsx` for the root layout, `app/globals.css` with Tailwind imports, `tailwind.config.js` with proper configuration, and `.env.local.example` showing required environment variables. Make it production-ready with proper TypeScript types.
+#### Prompt 1: Set up Python data analysis environment
+> I need to set up a complete Python environment for data analysis. Help me create a step-by-step installation guide for Python, Jupyter Notebook, and the essential libraries (pandas, matplotlib, seaborn, numpy). Include commands for both pip and conda installations, and provide a simple test script to verify everything is working correctly.
 
-#### Prompt 2: Create OpenAI API route with streaming
-> Write a complete Next.js 14 API route at `app/api/chat/route.ts` that integrates with OpenAI's gpt-3.5-turbo model. Include streaming responses using Vercel's AI SDK, proper error handling for invalid API keys, message history support, and a customizable system prompt. Add TypeScript types and comprehensive error messages for debugging.
+#### Prompt 2: Create a data analysis project template
+> Create a comprehensive Jupyter Notebook template for data analysis projects that includes all the standard sections: data loading, exploration, cleaning, analysis, and visualization. Include code cells with common operations like df.head(), df.info(), df.describe(), handling missing values, and basic visualization templates. Add markdown cells with explanations for each step.
 
-#### Prompt 3: Build the chatbot frontend interface
-> Create a complete React component for the chatbot interface using Vercel's `useChat` hook. Include message history display with user/AI message styling, input form with submission handling, loading states, empty message validation, auto-scrolling to latest messages, and responsive design using Tailwind CSS. Make it visually similar to ChatGPT's interface.
+#### Prompt 3: Generate practice datasets and analysis tasks
+> Create 3 different sample datasets (as CSV data) with realistic business scenarios: 1) Sales data with missing values, 2) Customer data with multiple categories, 3) Time series data with trends. For each dataset, provide specific analysis questions to answer and the expected visualizations to create. Format as ready-to-use CSV content I can copy-paste into files.
 
-#### Prompt 4: Add advanced error handling and UX improvements
-> Enhance the chatbot with advanced error handling including API rate limiting, network errors, and invalid responses. Add features like message timestamps, copy message functionality, clear conversation button, typing indicators, and message character limits. Include proper accessibility attributes and keyboard navigation support.
+#### Prompt 4: Build visualization templates
+> Create a collection of Python visualization templates using matplotlib and seaborn for common data analysis scenarios: bar plots for categorical data, line plots for time series, scatter plots for correlations, heatmaps for correlation matrices, and histograms for distributions. Include proper styling, titles, labels, and customization options for each template.
 
-#### Prompt 5: Create deployment configuration
-> Generate deployment configuration files for Vercel including `vercel.json`, environment variable setup instructions, and a comprehensive README.md with setup instructions, API key configuration, local development commands, and troubleshooting guide. Include security best practices and cost monitoring tips.
+#### Prompt 5: Create data cleaning workflow
+> Help me build a comprehensive data cleaning workflow in Python that handles common data quality issues: missing values (different strategies), duplicate records, data type conversions, outlier detection, and data validation. Provide code snippets for each scenario with explanations of when to use each approach.
 
 ### Links & Resources
-• [OpenAI Platform](https://platform.openai.com/) - Get API keys and manage usage
-• [OpenAI API Keys Dashboard](https://platform.openai.com/account/api-keys) - Manage API access
-• [Vercel AI SDK](https://sdk.vercel.ai/) - Documentation for AI SDK
-• [shadcn/ui](https://ui.shadcn.com/) - Component library for polished UI
-• [Original Video Tutorial](https://www.youtube.com/watch?v=_gPODg6br5w) - Full tutorial walkthrough
-• [Coding in Flow Channel](https://www.youtube.com/@CodingInFlow) - Creator's YouTube channel
+• [YouTube Tutorial](https://www.youtube.com/watch?v=EZdSVpgtjG0) - Python for Data Analysis & Visualization tutorial by Great Learning
+• [Pandas Documentation](https://pandas.pydata.org/docs/) - Official pandas library documentation
+• [Matplotlib Documentation](https://matplotlib.org/stable/contents.html) - Official matplotlib plotting library
+• [Seaborn Documentation](https://seaborn.pydata.org/) - Statistical visualization library
+• [NumPy Documentation](https://numpy.org/doc/) - Numerical computing library
+• [Jupyter Notebook](https://jupyter.org/) - Interactive computing environment
 
 ### Tags
-`#nextjs` `#openai` `#chatbot` `#ai-integration` `#streaming` `#typescript`
+`#python` `#data-analysis` `#pandas` `#visualization` `#beginners` `#tutorial`
 
 ### Category
-AI Development
+Data Analysis
 
 ---
 
