@@ -32,15 +32,21 @@ Use "- [ ]" checkbox format.
 ### Implementation Prompts
 Ready-to-use prompts that can be pasted directly into an AI assistant (like Claude Code) \
 to implement the actions above. Each prompt should be specific, self-contained, and \
-produce a useful result. Number each prompt clearly as:
+produce a useful result. Aim for 4-8 prompts covering the key implementation steps.
+
+Number each prompt clearly with a context summary explaining why it matters:
 
 #### Prompt 1: [Short descriptive title]
-> [The actual prompt text here]
+*[1-2 sentence summary: what this achieves and why it's valuable]*
+> [The actual detailed prompt text here — specific, self-contained, copy-paste ready. \
+Include relevant technical details, framework versions, file paths, and expected outcomes.]
 
 #### Prompt 2: [Short descriptive title]
-> [The actual prompt text here]
+*[1-2 sentence summary: what this achieves and why it's valuable]*
+> [The actual detailed prompt text here]
 
-Continue numbering for all prompts.
+Continue numbering for all prompts. Make each prompt detailed enough to produce a \
+complete, working result without additional context.
 
 ### Links & Resources
 All URLs, tools, libraries, repos, and resources mentioned or referenced. \

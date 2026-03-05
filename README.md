@@ -2,7 +2,7 @@
 
 Personal content capture, extraction & knowledge pipeline with agent-driven execution.
 
-Drop a URL — get structured, actionable markdown. React with :robot: — queue it for execution.
+Drop a URL — get structured, actionable markdown. React with 🤖 — queue it for execution.
 
 ---
 
@@ -12,10 +12,10 @@ MegaMind is a frictionless content capture and execution system. You drop a link
 
 1. **Extracts** the content using the best available method per source
 2. **Distils** it into structured markdown with insights, actions, and implementation prompts
-3. **Posts** the output to Discord with numbered, actionable prompts
+3. **Posts** the output to a Discord Forum channel with auto-categorised topic tags
 4. **Indexes** it in a centralised catalogue with category, tags, and status tracking
 5. **Stores** it in Obsidian for offline access across all devices
-6. **Queues execution** — react with :robot: on any prompt and it creates a GitHub Issue for action
+6. **Queues execution** — react with 🤖 on any prompt and it creates a GitHub Issue for action
 
 The goal: capture great content on the go (mobile, work desktop, home PC), and when you're ready, trigger execution with a single emoji — no desktop required.
 
@@ -30,8 +30,8 @@ The goal: capture great content on the go (mobile, work desktop, home PC), and w
 │  Drop any URL from any        (auto-watched, posts to        │
 │  device                        #extract as audit trail)      │
 │                                                               │
-│  Telegram Bot                 GitHub Issues (extract label)  │
-│  Forward URLs from phone      Mobile capture via GH app      │
+│  GitHub Issues (extract label)                                │
+│  Mobile capture via GH app                                   │
 │                                                               │
 └───────────────────────────┬───────────────────────────────────┘
                             │
@@ -57,7 +57,7 @@ The goal: capture great content on the go (mobile, work desktop, home PC), and w
 │  → Action Items (concrete next steps)                         │
 │  → Implementation Prompts (numbered, copy-paste ready)        │
 │  → Context Awareness (Claude Code? OpenClaw? tailored output)│
-│  → Tags + Category                                            │
+│  → Tags + Category (auto-mapped to Forum topic tags)          │
 │  → Source links + references                                  │
 │                                                               │
 └───────────────────────────┬───────────────────────────────────┘
@@ -65,9 +65,11 @@ The goal: capture great content on the go (mobile, work desktop, home PC), and w
                             ▼
 ┌──────────────────── OUTPUTS ─────────────────────────────────┐
 │                                                               │
-│  Discord #output                                              │
-│     → Header embed + thread with full details                │
-│     → React :robot: on any prompt to queue execution         │
+│  Discord Forum (#output)                                      │
+│     → Each extraction = Forum post with topic tags            │
+│     → Auto-categorised with up to 5 tags per post             │
+│     → Filterable by tag — browse by topic                     │
+│     → React 🤖 on any prompt to queue execution              │
 │                                                               │
 │  Obsidian Vault                                               │
 │     → Full markdown synced across all devices                │
@@ -110,11 +112,10 @@ Edit `.env` with your API keys:
 | `DISCORD_BOT_TOKEN` | For bot | Discord bot token for MegaMind |
 | `DISCORD_SERVER_ID` | For bot | RussHub server ID |
 | `DISCORD_EXTRACT_CHANNEL_ID` | For bot | #extract channel ID |
-| `DISCORD_OUTPUT_CHANNEL_ID` | For bot | #output channel ID |
+| `DISCORD_OUTPUT_CHANNEL_ID` | For bot | Forum channel ID (`1478880776291487785`) |
 | `YOUTUBE_API_KEY` | Optional | YouTube Data API v3 for playlist watcher |
 | `OBSIDIAN_VAULT_PATH` | Optional | Path to Obsidian vault for auto-sync |
-| `GITHUB_TOKEN` | Optional | GitHub PAT for execute queue + Telegram bot |
-| `TELEGRAM_BOT_TOKEN` | Optional | Telegram bot for mobile URL capture |
+| `GITHUB_TOKEN` | Optional | GitHub PAT for execute queue |
 
 ### 3. Run
 
@@ -125,8 +126,8 @@ python coord.py https://www.youtube.com/watch?v=example
 # Discord bot (includes dashboard, YouTube watcher)
 python discord_bot.py
 
-# Or use the startup script
-./start_megamind.sh
+# Or via systemd (recommended)
+systemctl --user start megamind.service
 ```
 
 ---
@@ -143,9 +144,7 @@ python coord.py --list --filter "TODO"       Filter by status
 python coord.py --status 3 "In Progress"     Update entry #3 status
 ```
 
-### Discord Bot
-
-The MegaMind Discord bot provides the full pipeline:
+### Discord Bot — Slash Commands
 
 | Command | Description |
 |---------|-------------|
@@ -156,7 +155,7 @@ The MegaMind Discord bot provides the full pipeline:
 | `/budget` | Show API usage and cost tracking |
 | `/dashboard` | Get the dashboard link |
 
-Drop any URL in **#extract** and MegaMind processes it automatically. Results appear in **#output** as a thread with full details.
+Drop any URL in **#extract** and MegaMind processes it automatically. Results appear in the **#output** Forum as tagged posts.
 
 ### Dashboard
 
@@ -172,9 +171,49 @@ Disable auto-start with `MEGAMIND_DASHBOARD=0`.
 
 ---
 
+## Discord Forum & Auto-Tagging
+
+The **#output** channel is a Discord Forum (channel type 15). Each extraction becomes a Forum post, auto-tagged based on AI-detected category.
+
+### Forum Tags (13 topic tags)
+
+| Tag | Emoji | Covers |
+|-----|-------|--------|
+| AI Agents | 🤖 | Agentic AI, agent frameworks, orchestration |
+| AI Tools | 🔧 | AI products, SDKs, Claude Code, APIs |
+| AI Strategy | 🧠 | AI business strategy, adoption, industry trends |
+| Prompting | 💬 | Prompt engineering, system prompts, techniques |
+| Automation | ⚡ | Workflow automation, scripting, scheduling |
+| Productivity | 📈 | PKM, Obsidian, tools, time management |
+| Development | 💻 | Python, JS, web dev, software patterns |
+| DevOps | 🚀 | Docker, Kubernetes, CI/CD, IaC, GitOps |
+| Content Creation | 🎬 | Video, writing, design, media production |
+| Data Science | 📊 | ML, data engineering, analytics, models |
+| Security | 🔒 | Cybersecurity, hardening, compliance |
+| Fitness | 💪 | Training, nutrition, health, mindfulness |
+| Finance | 💰 | Budgeting, investing, tax, financial planning |
+
+### Multi-Tag Support
+
+Posts can have up to **5 tags** (Discord's limit). The AI processor assigns a primary category, which maps to one or more Forum tags via `CATEGORY_TO_FORUM_TAGS`. For example:
+
+- "ai image generation" → **AI Tools** + **Content Creation**
+- "prompt engineering" → **Prompting** + **AI Strategy**
+- "data science" → **Data Science**
+
+Tags are resolved in `discord_bot.py` via `resolve_forum_tags()` and matched against `channel.available_tags`.
+
+### Browsing & Filtering
+
+- Click any tag chip at the top of the Forum to filter by topic
+- Posts auto-archive after inactivity but remain visible and filterable
+- Archived posts unarchive when someone replies
+
+---
+
 ## Content Output Format
 
-Every extraction produces a markdown file:
+Every extraction produces a markdown file and a Forum post:
 
 ```markdown
 # [Title]
@@ -187,7 +226,7 @@ Every extraction produces a markdown file:
 ### Implementation Prompts — Copy-paste-ready prompts for Claude Code
 ### Links & Resources     — All referenced URLs/tools
 ### Tags            — For categorisation
-### Category        — Primary category
+### Category        — Primary category (maps to Forum tags)
 ```
 
 **Context awareness:** When content mentions Claude Code, Anthropic, MCP, or similar tools, Implementation Prompts are automatically tailored with Claude Code-specific commands, slash commands, hooks, and CLAUDE.md patterns.
@@ -204,6 +243,8 @@ Every extraction produces a markdown file:
 | GitHub repos | GitHub API + README scrape | Structured repo info + documentation |
 
 All sources fall back to manual paste mode (`--paste`) if API keys aren't configured.
+
+YouTube extraction includes **oEmbed title resolution** — if the AI returns a generic or malformed title, MegaMind fetches the real title from YouTube's oEmbed API.
 
 ---
 
@@ -226,17 +267,9 @@ Drop URLs from your phone — they get processed automatically.
 
 ### Option A: Discord (lowest friction)
 
-Drop a URL in **#extract** from the Discord mobile app. MegaMind picks it up automatically.
+Drop a URL in **#extract** from the Discord mobile app. MegaMind picks it up automatically. Results appear in the Forum with proper tagging.
 
-### Option B: Telegram Bot
-
-Forward/share URLs from any app to your personal Telegram bot. The bot creates a GitHub Issue, which GitHub Actions processes.
-
-```bash
-python telegram_bot.py
-```
-
-### Option C: GitHub Mobile App
+### Option B: GitHub Mobile App
 
 1. Open the repo in the GitHub mobile app
 2. Create a new issue — paste the URL as the title
@@ -250,11 +283,10 @@ Phone                          Cloud                         Desktop
 ─────                          ─────                         ───────
 Share URL
   ├→ Discord #extract ──────→ MegaMind bot ────→ Extraction
-  ├→ Telegram Bot ──────────→ GitHub Issue ─┐    committed
-  └→ GitHub App → Issue ───────────────────┘    to repo
-                               GitHub Actions     updates INDEX
-                               runs coord.py      posts to #output
-                               closes issue
+  └→ GitHub App → Issue ────→ GitHub Actions      committed
+                               runs coord.py      to repo
+                               closes issue       updates INDEX
+                                                  posts to Forum
                                                           git pull
                                                           Obsidian sync
                                                           Pick up & implement
@@ -274,8 +306,6 @@ MegaMind automatically polls a YouTube playlist for new videos:
 
 **OAuth2 setup** (for playlist management):
 ```bash
-# 1. Create OAuth Desktop credentials at console.cloud.google.com
-# 2. Download JSON → save as client_secret.json in project root
 python youtube_auth.py
 ```
 
@@ -296,61 +326,57 @@ Data is persisted to `api_budget.json` and survives restarts.
 
 ## Discord Server Layout
 
-| Channel | ID | Purpose |
-|---------|-----|---------|
-| #extract | `1476145053721301149` | **INPUT** — Drop URLs here from any device. YouTube watcher also posts here as audit trail. |
-| #output | `1476146453121601639` | **OUTPUT** — Processed extracts with threaded details. React :robot: to queue execution. |
+| Channel | Type | ID | Purpose |
+|---------|------|----|---------|
+| #extract | Text | `1476145053721301149` | **INPUT** — Drop URLs here from any device. YouTube watcher posts here as audit trail. |
+| #output | Forum | `1478880776291487785` | **OUTPUT** — Forum with 13 topic tags. Each extraction = tagged post. Filter by topic. |
+| #general | Text | `1474002242175762549` | General chat — OpenClaw responds here. |
+| #ai-control | Text | `1474022861936132178` | OpenClaw admin — model switching, status, skill management. |
+| #testing | Text | `1474023043885174836` | Experimentation — test both bots freely. |
 
 Server: **RussHub** (`1474002241319866439`)
+
+### Bot Presence
+
+| Bot | ID | Channels |
+|-----|----|----------|
+| **OpenClaw** | `1474002760612708544` | #general, #ai-control, #testing, #reports |
+| **MegaMind** | `1476156237904085032` | #extract, #output (Forum) |
 
 ---
 
 ## Execution Queue
 
-When you react with :robot: on an implementation prompt in #output:
+When you react with 🤖 on an implementation prompt in the Forum:
 
 1. MegaMind detects the reaction
 2. Extracts the prompt text from the code block
 3. Creates a GitHub Issue tagged `execute` with the full prompt and context
-4. Posts confirmation to #output with the issue link
+4. Posts confirmation with the issue link
 
 This creates a queue of actionable tasks ready for execution.
 
 ---
 
-## Startup
+## Running as a Service
 
-MegaMind runs inside WSL. WSL and Docker lifecycle are managed by OpenClaw — MegaMind only needs to start itself.
+MegaMind runs as a **systemd user service** on WSL2 Ubuntu:
 
 ```bash
-./start_megamind.sh    # Start bot + dashboard (background)
-./stop_megamind.sh     # Stop everything
+# Service management
+systemctl --user start megamind.service
+systemctl --user stop megamind.service
+systemctl --user restart megamind.service
+systemctl --user status megamind.service
+
+# View logs
+journalctl --user -u megamind.service -f
+
+# Service file location
+~/.config/systemd/user/megamind.service
 ```
 
-The dashboard auto-starts as a subprocess of the bot. Logs go to `~/.megamind/megamind.log`.
-
----
-
-## Categories
-
-| Category | Covers |
-|----------|--------|
-| Claude Code | Claude Code CLI, MCP servers, Anthropic SDK, prompt engineering |
-| AI Agents | Agentic AI, agent frameworks, orchestration patterns |
-| OpenClaw | OpenClaw bot, skills, memory, Discord/Telegram integration |
-| DevOps | Ansible, Docker, Kubernetes, CI/CD, IaC, Terraform, GitOps |
-| Infrastructure | VMware, networking, storage, cloud, Linux admin |
-| Security | Cybersecurity, SIEM, hardening, compliance |
-| Development | Python, JavaScript, shell scripting, software patterns |
-| Productivity | Obsidian, PKM, workflows, time management, tools |
-| Finances | Budgeting, investing, super, tax, financial planning |
-| Fitness | Training, nutrition, health |
-| Mindfulness | Mental health, meditation, stoicism, self-improvement |
-| Machine Learning | ML, data engineering, model training |
-| Automation | Scripting, scheduling, workflow automation |
-| Open Source | OSS projects, contributions, community |
-
-Categories are not fixed — the AI processor creates new ones as needed.
+The service auto-starts on WSL boot (user linger enabled). The dashboard auto-starts as a subprocess.
 
 ---
 
@@ -359,35 +385,37 @@ Categories are not fixed — the AI processor creates new ones as needed.
 ```
 Co-Ord_Executor/
 ├── coord.py                  # CLI entry point
-├── discord_bot.py            # MegaMind Discord bot
+├── discord_bot.py            # MegaMind Discord bot (Forum posting, auto-tagging)
 ├── dashboard.py              # Web dashboard (knowledge graph + status)
 ├── budget.py                 # API usage and cost tracking
-├── telegram_bot.py           # Telegram bot for mobile URL capture
 ├── youtube_auth.py           # YouTube OAuth2 setup helper
 ├── config.py                 # Configuration (.env, paths, API keys)
-├── start_megamind.sh         # Startup script
-├── stop_megamind.sh          # Shutdown script
 ├── requirements.txt          # Python dependencies
-├── .env.example              # Template for API keys and config
+├── .env                      # API keys and config (not committed)
+├── .env.example              # Template for API keys
 ├── .github/workflows/
 │   └── extract.yml           # GitHub Actions extraction workflow
 ├── extractors/
 │   ├── detector.py           # URL → source type detection
 │   ├── base.py               # Base extractor interface
-│   ├── youtube.py            # YouTube via Grok API / manual paste
-│   ├── twitter.py            # Twitter/X via Grok API / manual paste
+│   ├── youtube.py            # YouTube via Grok API (+ oEmbed title fix)
+│   ├── twitter.py            # Twitter/X via Grok API
 │   ├── github.py             # GitHub via API + scraping
 │   └── article.py            # Articles via readability + scraping
 ├── processors/
-│   └── ai_processor.py       # Claude API insight extraction
+│   └── ai_processor.py       # Claude API insight extraction + category tagging
 ├── outputs/
-│   ├── formatter.py          # Markdown document formatting
+│   ├── formatter.py          # Discord embed + Forum post formatting
 │   ├── index.py              # Central INDEX.md management
 │   └── storage.py            # File storage (repo + Obsidian)
 ├── watchers/
 │   └── youtube_playlist.py   # YouTube playlist auto-watcher
-└── extractions/
-    └── INDEX.md              # Centralised extraction tracker
+├── extractions/
+│   └── INDEX.md              # Centralised extraction tracker
+└── prompts/                  # Session prompts for future work
+    ├── upgrade-audit-prompt.md
+    ├── forum-stats-prompt.md
+    └── cross-bot-integration-prompt.md
 ```
 
 ---
@@ -397,15 +425,26 @@ Co-Ord_Executor/
 | Component | Tool |
 |-----------|------|
 | Runtime | Python 3.11+ on WSL2 (Ubuntu) |
-| Discord Bot | discord.py — watches #extract, posts to #output, reacts to :robot: |
+| Service | systemd user service (`megamind.service`) |
+| Discord Bot | discord.py — watches #extract, posts to Forum with auto-tagging |
 | YouTube Watcher | google-api-python-client — playlist polling + OAuth2 management |
 | Grok/xAI | OpenAI-compatible client — transcripts + thread extraction |
 | LLM | Anthropic Claude Sonnet (primary) |
 | Articles | readability-lxml + BeautifulSoup |
 | Obsidian | File-based via WSL mount, synced via Obsidian Sync |
 | Dashboard | Python HTTPServer + Canvas-based force graph |
-| Mobile Capture | Telegram bot + GitHub Actions (issue-driven) |
 | Budget | JSON-based tracking with per-model pricing |
+
+---
+
+## Companion Bot: OpenClaw
+
+MegaMind runs alongside **OpenClaw** (AI assistant bot) on the same Discord server:
+
+- **OpenClaw** handles chat, model switching, skills (email, GitHub, Obsidian, weather, etc.)
+- **MegaMind** handles content extraction and knowledge capture
+- Both run as systemd user services on the same WSL2 instance
+- Future: cross-bot integration (OpenClaw triggering extractions, shared search)
 
 ---
 
@@ -413,9 +452,8 @@ Co-Ord_Executor/
 
 | Device | Input | View Output |
 |--------|-------|-------------|
-| Phone (Discord) | Drop URL in #extract | Read #output threads |
-| Phone (Telegram) | Forward URL to bot | — |
-| Work Desktop | Discord web + CLI | #output + Obsidian |
+| Phone (Discord) | Drop URL in #extract | Browse Forum by tag |
+| Work Desktop | Discord web + CLI | Forum + Obsidian |
 | Home PC | CLI + Discord + vault | Full access |
 | Any Device | Obsidian Sync | Read-only |
 | Any Browser | GitHub repo | Read-only |
@@ -427,23 +465,29 @@ Co-Ord_Executor/
 - [x] Core extraction pipeline (YouTube, Twitter, GitHub, Article)
 - [x] AI processing with Claude (context-aware prompts)
 - [x] CLI tool (`coord.py`)
-- [x] Discord bot — watch #extract, post to #output with threads
+- [x] Discord bot — watch #extract, post to #output
 - [x] YouTube playlist watcher with auto-extraction
 - [x] Obsidian vault + GitHub storage
 - [x] Central INDEX.md with status tracking
-- [x] Mobile capture (Telegram bot + GitHub Actions)
-- [x] :robot: reaction → GitHub Issue execute queue
+- [x] Mobile capture (GitHub Actions)
+- [x] 🤖 reaction → GitHub Issue execute queue
 - [x] API budget tracking
 - [x] Web dashboard (knowledge graph, zoom/pan, status management)
-- [x] Automated startup/shutdown scripts
+- [x] systemd user service (`megamind.service`)
+- [x] Discord Forum channel with 13 topic tags
+- [x] Multi-tag auto-categorisation (up to 5 tags per post)
+- [x] YouTube oEmbed title resolution
+- [x] Requester ID tracking (thread visibility fix)
+- [ ] `/stats` command — Forum analytics (extraction counts by tag, recent activity)
+- [ ] Improved `/search` — search Forum thread titles and tags directly
+- [ ] Re-extraction — re-process existing URLs with updated AI processing
+- [ ] OpenClaw skill integration — trigger extractions from any channel
+- [ ] Cross-bot status awareness — each bot knows if the other is online
+- [ ] Shared knowledge search — OpenClaw queries MegaMind's extraction index
 - [ ] Risk classification per prompt (Low / Medium / High)
 - [ ] OpenClaw dispatch — route low/medium prompts directly for execution
-- [ ] Notion routing — high-risk prompts go to approval queue
-- [ ] Execution result reporting back to #output
 - [ ] PDF/DOCX document extraction
 - [ ] Jina Reader API as alternative article extractor
-- [ ] Native OpenClaw skill integration
-- [ ] Repo rename to MegaMind
 
 ---
 
