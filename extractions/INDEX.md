@@ -46,3 +46,4 @@
 | 40 | 'Prompting' Just Split Into 4 Skills. You Only Kno... | YouTube | Full-Stack Development | `#nextjs` `#aws-amplify` `#fullstack` `#serverless` | Backlog | 2026-04-29 | [view](./2026-04-29_prompting-just-split-into-4-skills-you-only-know-one-heres-w.md) |
 | 41 | 10 Copilot Chat Prompts I Use Every Week | YouTube | Machine Learning | `#rag` `#python` `#ai` `#llm` | Backlog | 2026-04-29 | [view](./2026-04-29_10-copilot-chat-prompts-i-use-every-week.md) |
 | 42 | I Spent 6 Months Learning CoPilot & AI Agents — He... | YouTube | Full-Stack Development | `#nextjs` `#typescript` `#fullstack` `#prisma` | Backlog | 2026-04-29 | [view](./2026-04-29_i-spent-6-months-learning-copilot-ai-agents-heres-everything.md) |
+| 43 | I have 25 AI Agents working 24/7 with Openclaw | YouTube | AI Agents | `#openclaw` `#ai-agents` `#automation` `#multi-agent-systems` | Backlog | 2026-04-29 | [view](./2026-04-29_i-have-25-ai-agents-working-247-with-openclaw.md) |
