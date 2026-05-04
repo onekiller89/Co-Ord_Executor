@@ -47,3 +47,4 @@
 | 41 | 10 Copilot Chat Prompts I Use Every Week | YouTube | Machine Learning | `#rag` `#python` `#ai` `#llm` | Backlog | 2026-04-29 | [view](./2026-04-29_10-copilot-chat-prompts-i-use-every-week.md) |
 | 42 | I Spent 6 Months Learning CoPilot & AI Agents — He... | YouTube | Full-Stack Development | `#nextjs` `#typescript` `#fullstack` `#prisma` | Backlog | 2026-04-29 | [view](./2026-04-29_i-spent-6-months-learning-copilot-ai-agents-heres-everything.md) |
 | 43 | I have 25 AI Agents working 24/7 with Openclaw | YouTube | AI Agents | `#openclaw` `#ai-agents` `#automation` `#multi-agent-systems` | Backlog | 2026-04-29 | [view](./2026-04-29_i-have-25-ai-agents-working-247-with-openclaw.md) |
+| 44 | AI Insider: The Fastest Way To Use AI Agents In Yo... | YouTube | Development | `#discord` `#python` `#bot-development` `#automation` | Backlog | 2026-05-04 | [view](./2026-05-04_ai-insider-the-fastest-way-to-use-ai-agents-in-your-business.md) |
