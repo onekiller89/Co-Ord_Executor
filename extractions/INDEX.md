@@ -49,3 +49,4 @@
 | 43 | I have 25 AI Agents working 24/7 with Openclaw | YouTube | AI Agents | `#openclaw` `#ai-agents` `#automation` `#multi-agent-systems` | Backlog | 2026-04-29 | [view](./2026-04-29_i-have-25-ai-agents-working-247-with-openclaw.md) |
 | 44 | AI Insider: The Fastest Way To Use AI Agents In Yo... | YouTube | Development | `#discord` `#python` `#bot-development` `#automation` | Backlog | 2026-05-04 | [view](./2026-05-04_ai-insider-the-fastest-way-to-use-ai-agents-in-your-business.md) |
 | 45 | Agentic Engineering: Working With AI, Not Just Usi... | YouTube | AI Agents | `#claude` `#anthropic` `#ai-models` `#api-integration` | Backlog | 2026-05-08 | [view](./2026-05-08_agentic-engineering-working-with-ai-not-just-using-it-brenda.md) |
+| 46 | The 7 Skills You Need to Build AI Agents | YouTube | Web Development | `#css-grid` `#web-development` `#responsive-design` `#frontend` | Backlog | 2026-05-08 | [view](./2026-05-08_the-7-skills-you-need-to-build-ai-agents.md) |
