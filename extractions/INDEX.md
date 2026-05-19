@@ -53,3 +53,4 @@
 | 47 | Your AI Agent Is Locked To One Model. OpenClaw Jus... | YouTube | Machine Learning | `#neural-networks` `#machine-learning` `#python` `#from-scratch` | Backlog | 2026-05-08 | [view](./2026-05-08_your-ai-agent-is-locked-to-one-model-openclaw-just-killed-th.md) |
 | 48 | The Multi-Agent Architecture That Actually Ships —... | YouTube | Career | `#data-analytics` `#career-change` `#portfolio-building` `#sql` | Backlog | 2026-05-08 | [view](./2026-05-08_the-multi-agent-architecture-that-actually-ships-luke-alvoei.md) |
 | 49 | You're Wasting 40% Of Your AI Time On Something Fi... | YouTube | Python Development | `#python` `#cli` `#click` `#command-line` | Backlog | 2026-05-10 | [view](./2026-05-10_youre-wasting-40-of-your-ai-time-on-something-fixable.md) |
+| 50 | Divorce Lawyer: “Give her a prenup on the 3rd date... | YouTube | Other |  | Backlog | 2026-05-19 | [view](./2026-05-19_divorce-lawyer-give-her-a-prenup-on-the-3rd-date---james-sex.md) |
