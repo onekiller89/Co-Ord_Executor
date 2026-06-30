@@ -54,3 +54,4 @@
 | 48 | The Multi-Agent Architecture That Actually Ships —... | YouTube | Career | `#data-analytics` `#career-change` `#portfolio-building` `#sql` | Backlog | 2026-05-08 | [view](./2026-05-08_the-multi-agent-architecture-that-actually-ships-luke-alvoei.md) |
 | 49 | You're Wasting 40% Of Your AI Time On Something Fi... | YouTube | Python Development | `#python` `#cli` `#click` `#command-line` | Backlog | 2026-05-10 | [view](./2026-05-10_youre-wasting-40-of-your-ai-time-on-something-fixable.md) |
 | 50 | Divorce Lawyer: “Give her a prenup on the 3rd date... | YouTube | Other |  | Backlog | 2026-05-19 | [view](./2026-05-19_divorce-lawyer-give-her-a-prenup-on-the-3rd-date---james-sex.md) |
+| 51 | 9 Free AI Skills That Feel Like Cheat Codes | YouTube | Other |  | Backlog | 2026-06-30 | [view](./2026-06-30_9-free-ai-skills-that-feel-like-cheat-codes.md) |
