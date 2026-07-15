@@ -56,3 +56,4 @@
 | 50 | Divorce Lawyer: “Give her a prenup on the 3rd date... | YouTube | Relationships & Marriage | #relationships #marriage #prenup #divorce | Backlog | 2026-05-19 | [view](./2026-05-19_divorce-lawyer-give-her-a-prenup-on-the-3rd-date---james-sex.md) |
 | 51 | 9 Free AI Skills That Feel Like Cheat Codes | YouTube | Claude Code | #ai-skills #claude-code #codex #agent-plugins | Backlog | 2026-06-30 | [view](./2026-06-30_9-free-ai-skills-that-feel-like-cheat-codes.md) |
 | 52 | Claude Built the Ultimate Second Brain | YouTube | Knowledge Management | `#second-brain` `#obsidian` `#knowledge-management` `#claude-code` | Backlog | 2026-07-15 | [view](./2026-07-15_claude-built-the-ultimate-second-brain.md) |
+| 53 | AI Apps Making $20,000+ per month with 1 person te... | YouTube | Indie Hacking | `#micro-saas` `#ai-business` `#solopreneur` `#indie-hacking` | Backlog | 2026-07-15 | [view](./2026-07-15_ai-apps-making-20000-per-month-with-1-person-teams.md) |
