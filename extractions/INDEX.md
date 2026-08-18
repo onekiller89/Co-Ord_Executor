@@ -66,3 +66,4 @@
 | 60 | Building AI Champions in 2026 | YouTube | AI Strategy & Organisational Enablement | `#ai-adoption` `#change-management` `#champions-program` `#enterprise-ai` | Backlog | 2026-08-18 | [view](./2026-08-18_building-ai-champions-in-2026.md) |
 | 61 | How to Pilot and Manage AI Automations | YouTube | AI Strategy & Implementation | `#ai-automation` `#workflow-design` `#change-management` `#roi` | Backlog | 2026-08-18 | [view](./2026-08-18_how-to-pilot-and-manage-ai-automations.md) |
 | 62 | Bringing a Legacy Business into the AI Era | YouTube | AI Transformation Leadership | `#ai-adoption` `#ai-roi` `#claude-code` `#leadership` | Backlog | 2026-08-18 | [view](./2026-08-18_bringing-a-legacy-business-into-the-ai-era.md) |
+| 63 | Top 5 Challenges for the Head of AI | YouTube | AI Leadership | `#ai-leadership` `#enterprise-ai` `#change-management` `#ai-adoption` | Backlog | 2026-08-18 | [view](./2026-08-18_top-5-challenges-for-the-head-of-ai.md) |
