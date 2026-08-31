@@ -77,3 +77,4 @@
 | 71 | You NEED to try these 6 Open-Source Projects NOW | YouTube | AI Agents | `#open-source` `#ai-agents` `#local-ai` `#automation` | Backlog | 2026-08-26 | [view](./2026-08-26_you-need-to-try-these-6-open-source-projects-now.md) |
 | 72 | DHH: Future of Programming, AI, Agentic Engineerin... | YouTube | AI Agents | `#agentic-engineering` `#linux` `#ai-coding` `#programming` | Backlog | 2026-08-29 | [view](./2026-08-29_dhh-future-of-programming-ai-agentic-engineering-vibe-coding.md) |
 | 73 | If you use AI, switch to Omarchy immediately | YouTube | Open Source | `#omarchy` `#linux` `#open-source` `#ai-native` | Backlog | 2026-08-30 | [view](./2026-08-30_if-you-use-ai-switch-to-omarchy-immediately.md) |
+| 74 | Did OpenClaw 2.0 just kill Hermes and Grok Bot? | YouTube | AI Agents | `#ai-agents` `#openclaw` `#hermes-agent` `#grockbot` | Backlog | 2026-08-31 | [view](./2026-08-31_did-openclaw-20-just-kill-hermes-and-grok-bot.md) |
