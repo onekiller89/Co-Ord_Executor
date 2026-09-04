@@ -78,3 +78,4 @@
 | 72 | DHH: Future of Programming, AI, Agentic Engineerin... | YouTube | AI Agents | `#agentic-engineering` `#linux` `#ai-coding` `#programming` | Backlog | 2026-08-29 | [view](./2026-08-29_dhh-future-of-programming-ai-agentic-engineering-vibe-coding.md) |
 | 73 | If you use AI, switch to Omarchy immediately | YouTube | Open Source | `#omarchy` `#linux` `#open-source` `#ai-native` | Backlog | 2026-08-30 | [view](./2026-08-30_if-you-use-ai-switch-to-omarchy-immediately.md) |
 | 74 | Did OpenClaw 2.0 just kill Hermes and Grok Bot? | YouTube | AI Agents | `#ai-agents` `#openclaw` `#hermes-agent` `#grockbot` | Backlog | 2026-08-31 | [view](./2026-08-31_did-openclaw-20-just-kill-hermes-and-grok-bot.md) |
+| 75 | This Anthropic Hackathon Winner Just Released His ... | YouTube | Claude Code | `#claude-code` `#ai-agents` `#developer-tools` `#mcp` | Backlog | 2026-09-04 | [view](./2026-09-04_this-anthropic-hackathon-winner-just-released-his-entire-cla.md) |
