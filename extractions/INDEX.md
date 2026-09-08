@@ -79,3 +79,4 @@
 | 73 | If you use AI, switch to Omarchy immediately | YouTube | Open Source | `#omarchy` `#linux` `#open-source` `#ai-native` | Backlog | 2026-08-30 | [view](./2026-08-30_if-you-use-ai-switch-to-omarchy-immediately.md) |
 | 74 | Did OpenClaw 2.0 just kill Hermes and Grok Bot? | YouTube | AI Agents | `#ai-agents` `#openclaw` `#hermes-agent` `#grockbot` | Backlog | 2026-08-31 | [view](./2026-08-31_did-openclaw-20-just-kill-hermes-and-grok-bot.md) |
 | 75 | This Anthropic Hackathon Winner Just Released His ... | YouTube | Claude Code | `#claude-code` `#ai-agents` `#developer-tools` `#mcp` | Backlog | 2026-09-04 | [view](./2026-09-04_this-anthropic-hackathon-winner-just-released-his-entire-cla.md) |
+| 76 | How I Changed My Life in 1 Year with Reverse Goal ... | YouTube | Personal Development | `#goal-setting` `#productivity` `#self-improvement` `#planning` | Backlog | 2026-09-08 | [view](./2026-09-08_how-i-changed-my-life-in-1-year-with-reverse-goal-setting.md) |
