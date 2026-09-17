@@ -85,3 +85,4 @@
 | 79 | 11 Grok Bot Use Cases That Feel Like Cheating | YouTube | AI Agent Automation & Productivity Workflows |  | Backlog | 2026-09-14 | [view](./2026-09-14_11-grok-bot-use-cases-that-feel-like-cheating.md) |
 | 80 | This AI System Will Make You So Smart It’s Almost ... | YouTube | Personal Knowledge Management | `#second-brain` `#pkm` `#ai-productivity` `#obsidian` | Backlog | 2026-09-15 | [view](./2026-09-15_this-ai-system-will-make-you-so-smart-its-almost-unfair.md) |
 | 81 | 4 AI Agents To Automate 99% Of Your Life | YouTube | AI Agents | `#ai-agents` `#productivity` `#automation` `#prompt-engineering` | Backlog | 2026-09-17 | [view](./2026-09-17_4-ai-agents-to-automate-99-of-your-life.md) |
+| 82 | 5 AI Prompts To Fix Your Entire Life In 1 Day | YouTube | Personal Development | `#self-improvement` `#ai-prompting` `#decision-making` `#identity` | Backlog | 2026-09-17 | [view](./2026-09-17_5-ai-prompts-to-fix-your-entire-life-in-1-day.md) |
