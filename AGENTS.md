@@ -12,4 +12,4 @@ For handoff, report the branch, base and tip commits, changed files, tests run, 
 
 Keep `.env`, OAuth files, tokens, local intake records and other runtime state out of Git and agent handoffs. Reactions record pending work only. Execution, deployment and external messages require an explicit task with a named executor, target, branch and scope.
 
-The WSL directory, systemd unit, GitHub repository and Codex project must be renamed together during a planned cutover. Until that cutover is verified, do not assume the new path or remote URL is active.
+The canonical WSL checkout is `/home/aaa/MegaMind`, the repository is `https://github.com/onekiller89/MegaMind`, and `megamind.service` runs from that checkout. The legacy and Hermes intake directories are rollback archives. The Codex desktop saved-project link still needs to be added for the new folder; do not start new work from the archived checkout.
