@@ -14,7 +14,10 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 XAI_API_KEY = os.getenv("XAI_API_KEY", "")
 
 # Models
-CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
+MODEL_PROVIDER = os.getenv("MODEL_PROVIDER", "anthropic").strip().lower()
+CODEX_MODEL = os.getenv("CODEX_MODEL", "gpt-6-astra")
+CODEX_CLI = os.getenv("CODEX_CLI", "codex")
 GROK_MODEL = os.getenv("GROK_MODEL", "grok-3-latest")
 
 # Storage paths

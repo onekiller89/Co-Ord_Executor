@@ -34,12 +34,18 @@ def run_pipeline(url: str) -> dict:
     # 2. Extract raw content
     result = extractor.extract(url)
 
+    # Keep the actual fetched text locally for later source review. The public
+    # repository receives only the processed note, never raw transcript files.
+    from source_evidence import save_snapshot
+    filename = generate_filename(result)
+    save_snapshot(filename, result.raw_content, result.url,
+                  result.metadata.get("extraction_method", "scrape"))
+
     # 3. Process through AI
     processed = process_extraction(result)
 
     # 4. Format final document
     document = format_document(result, processed)
-    filename = generate_filename(result)
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     # 5. Save to storage
@@ -131,11 +137,14 @@ def paste_content(source_type_str: str) -> None:
         metadata={"extraction_method": "manual_paste"},
     )
 
+    filename = generate_filename(result)
+    from source_evidence import save_snapshot
+    save_snapshot(filename, result.raw_content, result.url, "manual_paste")
+
     print(f"  Processing with AI...")
     processed = process_extraction(result)
 
     document = format_document(result, processed)
-    filename = generate_filename(result)
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
     saved = save_extraction(filename, document)

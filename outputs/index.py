@@ -75,6 +75,8 @@ def update_status(entry_num: int, new_status: str) -> bool:
 
     Returns True if the entry was found and updated.
     """
+    if new_status not in {"Backlog", "TODO", "In Progress", "Done", "Cancel"}:
+        raise ValueError("Invalid status")
     if not config.INDEX_FILE.exists():
         return False
 
@@ -87,8 +89,8 @@ def update_status(entry_num: int, new_status: str) -> bool:
             cells = [c.strip() for c in line.split("|")]
             # cells[0] is empty (before first |), cells[1] is the number
             if cells[1] == str(entry_num):
-                # Status is in the 6th column (index 5)
-                cells[5] = f" {new_status} "
+                # The table has a leading empty cell. Status is cell 6.
+                cells[6] = f" {new_status} "
                 lines[i] = "|".join(cells)
                 updated = True
                 break

@@ -15,9 +15,11 @@ log = logging.getLogger("megamind.budget")
 
 BUDGET_FILE = config.PROJECT_ROOT / "api_budget.json"
 
-# ── Pricing (USD per 1M tokens) — updated Feb 2025 ──
-# https://docs.anthropic.com/en/docs/about-claude/pricing
+# Pricing (USD per 1M tokens); verify against provider rates when models change.
+# https://platform.claude.com/docs/en/about-claude/pricing
 PRICING = {
+    "claude-opus-5-5":         {"input": 4.00, "output": 20.00},
+    "claude-sonnet-5":        {"input": 2.00, "output": 10.00},
     "claude-sonnet-4-6":       {"input": 3.00, "output": 15.00},
     "claude-opus-4-6":         {"input": 15.00, "output": 75.00},
     "claude-haiku-4-5":        {"input": 0.80, "output": 4.00},
@@ -42,6 +44,7 @@ def _load() -> dict:
         "total_output_tokens": 0,
         "total_cost": 0.0,
         "extraction_count": 0,
+        "subscription_runs": 0,
         "history": [],  # recent entries for breakdown
     }
 
@@ -109,6 +112,20 @@ def record_usage(
     return data
 
 
+def record_subscription_run(model: str, title: str = "") -> dict:
+    """Count Codex subscription analyses without inventing an API charge."""
+    data = _load()
+    data["subscription_runs"] = data.get("subscription_runs", 0) + 1
+    data["history"].append({
+        "date": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
+        "api": "codex_subscription", "model": model, "title": title[:60],
+        "cost": None,
+    })
+    data["history"] = data["history"][-100:]
+    _save(data)
+    return data
+
+
 def get_summary() -> dict:
     """Return the current budget summary."""
     return _load()
@@ -117,17 +134,17 @@ def get_summary() -> dict:
 def format_budget_embed_text() -> str:
     """Return a formatted string for Discord display."""
     data = _load()
-    if data["extraction_count"] == 0:
-        return "No API usage recorded yet."
-
-    avg_cost = data["total_cost"] / data["extraction_count"]
-
-    lines = [
-        f"**Total spend:** ${data['total_cost']:.4f}",
-        f"**Extractions:** {data['extraction_count']}",
-        f"**Avg cost/extraction:** ${avg_cost:.4f}",
-        f"**Total tokens:** {data['total_input_tokens']:,} in / {data['total_output_tokens']:,} out",
-    ]
+    lines = [f"**Codex subscription analyses:** {data.get('subscription_runs', 0)}"]
+    if data["extraction_count"]:
+        avg_cost = data["total_cost"] / data["extraction_count"]
+        lines.extend([
+            f"**Tracked API spend:** ${data['total_cost']:.4f}",
+            f"**API calls:** {data['extraction_count']}",
+            f"**Avg API cost/call:** ${avg_cost:.4f}",
+            f"**API tokens:** {data['total_input_tokens']:,} in / {data['total_output_tokens']:,} out",
+        ])
+    elif not data.get("subscription_runs"):
+        return "No model usage recorded yet."
 
     # Last 5 entries
     recent = data["history"][-5:]
@@ -135,9 +152,7 @@ def format_budget_embed_text() -> str:
         lines.append("\n**Recent:**")
         for entry in reversed(recent):
             title = entry.get("title", "")
-            lines.append(
-                f"  `${entry['cost']:.4f}` {entry['api']}/{entry['model'][:20]} "
-                f"— {title or 'untitled'} ({entry['date']})"
-            )
+            charge = "subscription" if entry.get("cost") is None else f"${entry['cost']:.4f}"
+            lines.append(f"  `{charge}` {entry['api']}/{entry['model'][:20]}: {title or 'untitled'} ({entry['date']})")
 
     return "\n".join(lines)

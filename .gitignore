@@ -13,4 +13,7 @@ youtube_token.json
 api_budget.json
 data/work-intakes.json
 data/work-intake-audit.jsonl
+data/source_snapshots/
+data/source_reviews.json
+data/forum_index.json
 *:Zone.Identifier
