@@ -86,30 +86,50 @@ def parse_sections(processed_content: str) -> dict[str, str]:
 def parse_prompts(prompts_section: str) -> list[dict]:
     """Parse the Implementation Prompts section into individual prompts.
 
-    Returns list of dicts: [{"title": "...", "body": "..."}, ...]
+    Supports format with optional context summary:
+        #### Prompt N: Title
+        *Context summary explaining value*
+        > Actual prompt text
+
+    Returns list of dicts: [{"title": "...", "context": "...", "body": "..."}, ...]
     """
     prompts = []
     current_title = None
-    current_lines = []
+    current_context_lines = []
+    current_body_lines = []
+    in_body = False
 
     for line in prompts_section.split("\n"):
         prompt_heading = re.match(r"^####\s+Prompt\s+\d+:\s*(.+)$", line)
         if prompt_heading:
             if current_title:
-                prompts.append({
-                    "title": current_title,
-                    "body": "\n".join(current_lines).strip().strip(">").strip(),
-                })
+                prompts.append(_build_prompt(
+                    current_title, current_context_lines, current_body_lines
+                ))
             current_title = prompt_heading.group(1).strip()
-            current_lines = []
+            current_context_lines = []
+            current_body_lines = []
+            in_body = False
         elif current_title is not None:
-            current_lines.append(line)
+            stripped = line.strip()
+            # Lines starting with > are body (blockquote)
+            if stripped.startswith(">"):
+                in_body = True
+                current_body_lines.append(stripped.lstrip(">").strip())
+            # Italic lines (*...*) before body are context
+            elif not in_body and re.match(r"^\*.*\*$", stripped):
+                current_context_lines.append(stripped.strip("*").strip())
+            # Non-empty lines after body starts continue the body
+            elif in_body and stripped:
+                current_body_lines.append(stripped.lstrip(">").strip())
+            # Non-empty, non-blockquote lines before body are also context
+            elif not in_body and stripped:
+                current_context_lines.append(stripped)
 
     if current_title:
-        prompts.append({
-            "title": current_title,
-            "body": "\n".join(current_lines).strip().strip(">").strip(),
-        })
+        prompts.append(_build_prompt(
+            current_title, current_context_lines, current_body_lines
+        ))
 
     # Fallback: if no #### Prompt N: headings found, split on blockquotes
     if not prompts and prompts_section.strip():
@@ -117,6 +137,19 @@ def parse_prompts(prompts_section: str) -> list[dict]:
         for i, block in enumerate(blocks, 1):
             body = block.strip().strip(">").strip()
             if body:
-                prompts.append({"title": f"Prompt {i}", "body": body})
+                prompts.append({"title": f"Prompt {i}", "context": "", "body": body})
 
     return prompts
+
+
+def _build_prompt(title: str, context_lines: list, body_lines: list) -> dict:
+    """Build a prompt dict, handling cases where context/body may be mixed."""
+    context = " ".join(context_lines).strip()
+    body = "\n".join(body_lines).strip()
+
+    # If no blockquoted body found, treat all collected text as body
+    if not body and context:
+        body = context
+        context = ""
+
+    return {"title": title, "context": context, "body": body}

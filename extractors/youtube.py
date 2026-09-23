@@ -1,6 +1,9 @@
 """YouTube video extraction via Grok API or manual paste."""
 
+import re
 import sys
+import urllib.request
+import json
 from openai import OpenAI
 
 import config
@@ -75,12 +78,7 @@ class YouTubeExtractor(BaseExtractor):
         except Exception:
             pass
 
-        # Try to parse title from first line of response
-        lines = content.strip().split("\n")
-        title = lines[0].strip().lstrip("#").strip() if lines else "Untitled Video"
-        # Clean up title if it has a label prefix like "Title: ..."
-        if ":" in title and len(title.split(":")[0].split()) <= 3:
-            title = title.split(":", 1)[1].strip()
+        title = _extract_title(content, url)
 
         return ExtractionResult(
             title=title,
@@ -140,3 +138,59 @@ class YouTubeExtractor(BaseExtractor):
             raw_content=content,
             metadata={"extraction_method": "manual_paste", "thumbnail": thumbnail_url},
         )
+
+
+def _extract_title(content: str, url: str) -> str:
+    """Extract video title from Grok's response or YouTube API.
+
+    Tries in order:
+    1. Explicit "Title:" or "Video Title:" lines in the response
+    2. YouTube Data API (if API key available)
+    3. First non-preamble line of the response
+    """
+    # 1. Look for explicit title patterns in the response
+    for line in content.split("\n")[:15]:
+        line = line.strip().lstrip("#").strip()
+        m = re.match(
+            r"^(?:\*{0,2})(?:Video\s+)?Title(?:\*{0,2})\s*[:]\s*(.+)",
+            line, re.IGNORECASE,
+        )
+        if m:
+            title = m.group(1).strip().strip('"').strip("*").strip()
+            if title:
+                return title[:200]
+
+    # 2. Try YouTube Data API
+    video_id = extract_video_id(url)
+    if video_id and config.YOUTUBE_API_KEY:
+        try:
+            api_url = (
+                f"https://www.googleapis.com/youtube/v3/videos"
+                f"?id={video_id}&part=snippet&key={config.YOUTUBE_API_KEY}"
+            )
+            with urllib.request.urlopen(api_url, timeout=5) as resp:
+                data = json.loads(resp.read())
+                items = data.get("items", [])
+                if items:
+                    return items[0]["snippet"]["title"][:200]
+        except Exception:
+            pass
+
+    # 3. First non-preamble line
+    preamble_starts = (
+        "below is", "here is", "here's", "i'll provide", "i will provide",
+        "the following", "this is a", "let me", "certainly",
+    )
+    for line in content.split("\n")[:10]:
+        line = line.strip().lstrip("#").strip()
+        if not line:
+            continue
+        if any(line.lower().startswith(p) for p in preamble_starts):
+            continue
+        # Clean up label prefixes like "Channel: ..."
+        if ":" in line and len(line.split(":")[0].split()) <= 3:
+            line = line.split(":", 1)[1].strip()
+        if line:
+            return line[:200]
+
+    return "Untitled Video"
