@@ -186,11 +186,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Connection", "close")
         self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://img.youtube.com; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'")
         self.end_headers()
-        self.wfile.write(body)
+        # WSL mirrored-network loopback can retain the final TCP segment until
+        # a later write. Keep extra bytes outside Content-Length as a flush.
+        self.wfile.write(body + b" " * 2048)
         self.wfile.flush()
 
     def _json(self, data: dict | list, code: int = 200):
