@@ -129,7 +129,8 @@ def _overview() -> dict:
     return {"entries": entries, "forum": forum_data, "forum_stats": forum_stats(forum_data),
             "budget": _load_budget(), "counts": {
                 "total": len(entries), "action_queue": sum(e["status"] in {"TODO", "In Progress"} for e in entries),
-                "ideas_to_try": sum(bool(e["actions"]) and e["status"] not in {"Done", "Cancel"} for e in entries),
+                "ideas_to_try": sum(bool(e["actions"]) and e["source_state"] in {"caption_backed", "fetched_text"}
+                                    and e["status"] not in {"Done", "Cancel"} for e in entries),
                 "source_review": high_review, "recent_30d": recent,
                 "by_status": dict(Counter(e["status"] for e in entries)),
                 "by_source": dict(Counter(e["source"] for e in entries)),
