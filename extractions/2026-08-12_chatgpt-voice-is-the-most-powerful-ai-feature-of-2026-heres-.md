@@ -113,4 +113,4 @@ AI Productivity
 
 ---
 
-*Extracted by [Co-Ord Executor](https://github.com/onekiller89/Co-Ord_Executor)*
+*Extracted by [MegaMind](https://github.com/onekiller89/MegaMind)*
