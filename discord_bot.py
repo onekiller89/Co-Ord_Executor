@@ -17,6 +17,7 @@ import re
 import subprocess
 import threading
 import sys
+from datetime import datetime, timedelta, timezone
 
 import discord
 from discord import app_commands
@@ -297,26 +298,34 @@ class MegaMind(discord.Client):
         except Exception as e:
             log.warning(f"Failed to start dashboard: {e}")
 
-    async def _forum_data(self) -> dict:
+    async def _forum_data(self, *, force: bool = False) -> dict:
         """Refresh Forum metadata for slash commands, retaining a usable cache on failure."""
+        cached = load_forum_index()
+        if cached.get("updated_at") and not force:
+            try:
+                updated = datetime.fromisoformat(cached["updated_at"])
+                if datetime.now(timezone.utc) - updated < timedelta(minutes=10):
+                    return cached
+            except ValueError:
+                pass
         channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
         if not channel:
             try:
                 channel = await self.fetch_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
             except discord.HTTPException as exc:
                 log.warning("Forum lookup failed: %s", exc)
-                return load_forum_index()
+                return cached
         if not isinstance(channel, discord.ForumChannel):
-            return load_forum_index()
+            return cached
         try:
             return await refresh_forum_index(channel)
         except discord.HTTPException as exc:
             log.warning("Forum refresh failed: %s", exc)
-            return load_forum_index()
+            return cached
 
     @tasks.loop(minutes=30)
     async def forum_refresh_loop(self):
-        data = await self._forum_data()
+        data = await self._forum_data(force=True)
         if data.get("updated_at"):
             log.info("Forum catalogue: %s posts", len(data["posts"]))
 
