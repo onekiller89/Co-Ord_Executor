@@ -2,83 +2,20 @@
 
 import time
 import re
+import logging
+import subprocess
+import tempfile
+from pathlib import Path
 
 import anthropic
 
 import config
 from extractors.base import ExtractionResult
 
+log = logging.getLogger("megamind.processor")
 
-SYSTEM_PROMPT = """\
-You are MegaMind — an AI assistant that transforms raw content extractions into \
-structured, actionable knowledge documents.
 
-Your job is to analyse the extracted content and produce a structured output with these \
-exact sections. Be thorough but concise. Focus on what is genuinely valuable and actionable.
-
-## Output format (follow exactly):
-
-### Summary
-2-4 sentences capturing the core value of this content.
-
-### Key Insights
-Bullet list of the most important takeaways. Each insight should be self-contained and \
-useful on its own. Aim for 3-8 insights.
-
-### Actions
-A checklist of concrete, specific things the reader can do to implement or benefit from \
-this content. Each action should be a clear next step, not vague advice. \
-Use "- [ ]" checkbox format.
-
-### Implementation Prompts
-Ready-to-use prompts that can be pasted directly into an AI assistant (like Claude Code) \
-to implement the actions above. Each prompt should be specific, self-contained, and \
-produce a useful result. Aim for 4-8 prompts covering the key implementation steps.
-
-Number each prompt clearly with a context summary explaining why it matters:
-
-#### Prompt 1: [Short descriptive title]
-*[1-2 sentence summary: what this achieves and why it's valuable]*
-> [The actual detailed prompt text here — specific, self-contained, copy-paste ready. \
-Include relevant technical details, framework versions, file paths, and expected outcomes.]
-
-#### Prompt 2: [Short descriptive title]
-*[1-2 sentence summary: what this achieves and why it's valuable]*
-> [The actual detailed prompt text here]
-
-Continue numbering for all prompts. Make each prompt detailed enough to produce a \
-complete, working result without additional context.
-
-### Links & Resources
-All URLs, tools, libraries, repos, and resources mentioned or referenced. \
-Format as markdown links. Include the original source URL.
-
-### Tags
-Suggest 3-6 lowercase tags for categorisation. Format as: `#tag1` `#tag2` `#tag3`
-
-### Category
-Suggest ONE primary category. Choose the most specific and accurate category for the \
-content. You are NOT limited to a fixed list — pick whatever best describes the content. \
-Examples include but are not limited to: Claude Code, AI Agents, OpenClaw, \
-Infrastructure as Code, DevOps, Security, Development, Productivity, Finances, Budgeting, \
-Fitness, Mindfulness, Career, Business, Open Source, Machine Learning, Automation, \
-Data Engineering, Cloud Architecture, Leadership, Communication, etc. \
-If none of the examples fit, create a new category that accurately describes the content. \
-Output just the category name, nothing else.
-
-## Context-awareness rules:
-- If the content relates to Claude, Claude Code, Anthropic, MCP, or similar: \
-  tailor the Implementation Prompts specifically for Claude Code CLI usage. \
-  Reference Claude Code features like slash commands, MCP servers, CLAUDE.md, hooks, etc.
-- If the content relates to AI coding assistants generally (Cursor, Copilot, Windsurf, \
-  Cline, Aider, OpenClaw, etc.): note how concepts can be adapted for Claude Code.
-- If the content is about a specific tool/framework: make the Actions about setting it up \
-  and trying it, and the prompts about implementing it.
-- If the content is educational/conceptual: make the Actions about applying the knowledge \
-  and the prompts about building something with it.
-
-Be practical. The reader will pick this up later on their desktop to implement. \
-Make everything as copy-paste-ready as possible."""
+SYSTEM_PROMPT = (Path(__file__).resolve().parents[1] / "prompts" / "analysis-v2.md").read_text(encoding="utf-8").strip()
 
 
 REQUIRED_SECTIONS = (
@@ -86,16 +23,61 @@ REQUIRED_SECTIONS = (
     "Key Insights",
     "Actions",
     "Implementation Prompts",
+    "Links & Resources",
     "Tags",
     "Category",
 )
 
 
 def process_extraction(result: ExtractionResult) -> str:
-    """Process an extraction result through Claude to generate structured output.
+    """Use the selected model, falling back to Anthropic when Codex is unavailable."""
+    if config.MODEL_PROVIDER == "codex":
+        try:
+            content = _process_codex(result)
+            missing = _missing_required_sections(content)
+            if missing:
+                raise RuntimeError("Codex output missed required sections")
+            result.metadata["analysis_model"] = config.CODEX_MODEL
+            try:
+                from budget import record_subscription_run
+                record_subscription_run(config.CODEX_MODEL, result.title)
+            except Exception:
+                log.warning("Codex usage counter could not be saved")
+            return content
+        except (OSError, subprocess.SubprocessError, RuntimeError) as exc:
+            log.warning("Codex analysis failed (%s); trying Anthropic fallback", type(exc).__name__)
+            if not config.ANTHROPIC_API_KEY:
+                raise
+    elif config.MODEL_PROVIDER != "anthropic":
+        raise ValueError(f"Unknown model provider: {config.MODEL_PROVIDER}")
+    content = _process_anthropic(result)
+    if config.ANTHROPIC_API_KEY:
+        result.metadata["analysis_model"] = config.CLAUDE_MODEL
+    return content
 
-    Returns the AI-generated structured content as a string.
-    """
+
+def _process_codex(result: ExtractionResult) -> str:
+    """Run the already signed-in Codex CLI in an empty, read-only workspace."""
+    prompt = (f"{SYSTEM_PROMPT}\n\nSource URL: {result.url}\nTitle: {result.title}\n"
+              f"SOURCE CONTENT\n{result.raw_content}\nEND SOURCE\n\n"
+              "Return only the seven Markdown sections. Do not use tools or inspect files; "
+              "the complete source is above.")
+    with tempfile.TemporaryDirectory(prefix="megamind-codex-") as workspace:
+        output = Path(workspace) / "answer.md"
+        completed = subprocess.run(
+            [config.CODEX_CLI, "exec", "--ephemeral", "--ignore-user-config",
+             "--skip-git-repo-check", "--sandbox", "read-only",
+             "-c", "model_reasoning_effort=medium", "-m", config.CODEX_MODEL,
+             "-o", str(output), "-"],
+            input=prompt, text=True, cwd=workspace, capture_output=True, timeout=300,
+        )
+        if completed.returncode or not output.is_file():
+            raise RuntimeError(f"Codex exited with code {completed.returncode}")
+        return output.read_text(encoding="utf-8").strip()
+
+
+def _process_anthropic(result: ExtractionResult) -> str:
+    """Process an extraction through the Anthropic API, tracking its API cost."""
     if not config.ANTHROPIC_API_KEY:
         return _fallback_processing(result)
 
@@ -117,7 +99,7 @@ Analyse this content and produce the structured output as specified."""
         try:
             response = client.messages.create(
                 model=config.CLAUDE_MODEL,
-                max_tokens=4096,
+                max_tokens=3200,
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": user_message}],
             )
@@ -129,7 +111,8 @@ Analyse this content and produce the structured output as specified."""
                 continue
             raise
 
-    processed_text = response.content[0].text
+    calls = [response]
+    processed_text = "\n".join(block.text for block in response.content if block.type == "text").strip()
     missing_sections = _missing_required_sections(processed_text)
     # Long extractions occasionally reach the response limit after producing all of
     # the substantive analysis but before the final taxonomy fields.  Complete
@@ -151,26 +134,29 @@ Extraction to classify:
             max_tokens=500,
             messages=[{"role": "user", "content": completion_prompt}],
         )
-        processed_text = f"{processed_text.rstrip()}\n\n{completion.content[0].text.strip()}"
+        calls.append(completion)
+        repair_text = "\n".join(block.text for block in completion.content if block.type == "text").strip()
+        processed_text = f"{processed_text.rstrip()}\n\n{repair_text}"
         missing_sections = _missing_required_sections(processed_text)
+    # Track token usage for budget
+    try:
+        from budget import record_usage
+        for index, call in enumerate(calls):
+            record_usage(
+                model=config.CLAUDE_MODEL,
+                input_tokens=call.usage.input_tokens,
+                output_tokens=call.usage.output_tokens,
+                api="anthropic",
+                title=result.title + (" (section repair)" if index else ""),
+            )
+    except Exception:
+        pass  # Don't let budget tracking break extraction
+
     if missing_sections:
         raise RuntimeError(
             "AI processing response missing required section(s): "
             + ", ".join(missing_sections)
         )
-
-    # Track token usage for budget
-    try:
-        from budget import record_usage
-        record_usage(
-            model=config.CLAUDE_MODEL,
-            input_tokens=response.usage.input_tokens,
-            output_tokens=response.usage.output_tokens,
-            api="anthropic",
-            title=result.title,
-        )
-    except Exception:
-        pass  # Don't let budget tracking break extraction
 
     return processed_text
 

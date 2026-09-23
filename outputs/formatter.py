@@ -1,6 +1,8 @@
 """Markdown document formatter — wraps AI-processed content into a final document."""
 
 import re
+import hashlib
+from uuid import uuid4
 from datetime import datetime, timezone
 
 from extractors.base import ExtractionResult
@@ -13,6 +15,7 @@ def format_document(result: ExtractionResult, processed_content: str) -> str:
     """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     extraction_method = result.metadata.get("extraction_method", "scrape")
+    analysis_model = result.metadata.get("analysis_model", "unrecorded")
 
     thumbnail = result.metadata.get("thumbnail", "")
     banner_line = f"![banner]({thumbnail})\n\n" if thumbnail else ""
@@ -20,7 +23,7 @@ def format_document(result: ExtractionResult, processed_content: str) -> str:
     document = f"""\
 {banner_line}# {result.title}
 
-> **Source:** {result.source_type} | **Extracted:** {now} | **Method:** {extraction_method}
+> **Source:** {result.source_type} | **Extracted:** {now} | **Method:** {extraction_method} | **Analysis:** {analysis_model}
 > **URL:** {result.url}
 
 ---
@@ -36,8 +39,8 @@ def format_document(result: ExtractionResult, processed_content: str) -> str:
 
 def extract_tags_from_content(processed_content: str) -> list[str]:
     """Pull tag strings from the processed content's Tags section."""
-    tags = re.findall(r"`#([^`]+)`", processed_content)
-    return tags
+    section = parse_sections(processed_content).get("Tags", "")
+    return re.findall(r"`#([a-zA-Z0-9][a-zA-Z0-9-]{1,39})`", section)
 
 
 def extract_category_from_content(processed_content: str) -> str:
@@ -49,13 +52,14 @@ def extract_category_from_content(processed_content: str) -> str:
 
 
 def generate_filename(result: ExtractionResult) -> str:
-    """Generate a filesystem-safe filename from the extraction result."""
+    """Generate a unique filename so repeated titles never overwrite evidence."""
     date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     # Clean title for filename
     safe_title = re.sub(r"[^\w\s-]", "", result.title)
     safe_title = re.sub(r"\s+", "-", safe_title).strip("-").lower()
-    safe_title = safe_title[:60]  # Keep it reasonable length
-    return f"{date_str}_{safe_title}.md"
+    safe_title = safe_title[:48] or "untitled"
+    source_id = hashlib.sha256(result.url.encode("utf-8")).hexdigest()[:8]
+    return f"{date_str}_{safe_title}_{source_id}_{uuid4().hex[:8]}.md"
 
 
 def parse_sections(processed_content: str) -> dict[str, str]:
@@ -93,6 +97,8 @@ def parse_prompts(prompts_section: str) -> list[dict]:
 
     Returns list of dicts: [{"title": "...", "context": "...", "body": "..."}, ...]
     """
+    if prompts_section.strip().casefold() in {"none", "n/a", "not applicable"}:
+        return []
     prompts = []
     current_title = None
     current_context_lines = []

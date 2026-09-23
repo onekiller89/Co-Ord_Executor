@@ -26,6 +26,7 @@ import config
 from coord import run_pipeline
 from outputs.formatter import parse_sections, parse_prompts, extract_category_from_content
 from work_intake import IntakePolicy, WorkIntakeStore
+from forum_index import load_forum_index, refresh_forum_index, record_published, forum_stats, search_forum
 
 logging.basicConfig(
     level=logging.INFO,
@@ -114,10 +115,31 @@ def get_category_colour(category: str) -> int:
     return CATEGORY_COLOURS.get(category.lower(), DEFAULT_COLOUR)
 
 
-def resolve_forum_tags(category: str) -> list[str]:
-    """Map an AI category to a list of forum tag IDs."""
-    tag_names = CATEGORY_TO_FORUM_TAGS.get(category.lower(), ["AI Tools"])
-    return [FORUM_TAG_MAP[n] for n in tag_names if n in FORUM_TAG_MAP]
+def resolve_forum_tags(category: str, source_tags: str = "") -> list[str]:
+    """Map flexible model categories and hashtags to existing Forum topics."""
+    signal = f"{category} {source_tags}".lower().replace("-", " ")
+    names = list(CATEGORY_TO_FORUM_TAGS.get(category.lower(), []))
+    keywords = {
+        "AI Agents": r"\bagents?\b|\bopenclaw\b|\bcodex\b",
+        "AI Tools": r"\btools?\b|\bclaude\b|\bchatgpt\b|\bmcp\b",
+        "AI Strategy": r"\bstrateg\w*|\badoption\b|\benterprise ai\b",
+        "Prompting": r"\bprompts?\b|\bprompting\b",
+        "Automation": r"\bautomat\w*|\bworkflow\w*|\borchestrat\w*",
+        "Productivity": r"\bproductiv\w*|\bhabits?\b|\bknowledge\b",
+        "Development": r"\bdevelop\w*|\bcoding\b|\bprogramming\b",
+        "DevOps": r"\bdevops\b|\binfrastructure\b|\bdeploy\w*",
+        "Content Creation": r"\bcontent\b|\bwriting\b|\bvideo\b",
+        "Data Science": r"\bdata\b|\banalytics?\b|\bmachine learning\b",
+        "Security": r"\bsecur\w*|\bprivacy\b",
+        "Fitness": r"\bfitness\b|\bhealth\b|\bexercise\b",
+        "Finance": r"\bfinanc\w*|\binvest\w*|\bbudget\w*|\bwealth\b|\bmoney\b",
+    }
+    for name, pattern in keywords.items():
+        if re.search(pattern, signal) and name not in names:
+            names.append(name)
+    if not names:
+        names = ["AI Tools"]
+    return [FORUM_TAG_MAP[name] for name in names[:5] if name in FORUM_TAG_MAP]
 
 
 class MegaMind(discord.Client):
@@ -144,7 +166,8 @@ class MegaMind(discord.Client):
             self.tree.copy_global_to(guild=guild)
             await self.tree.sync(guild=guild)
         self.youtube_watcher_loop.start()
-        log.info("Slash commands synced, YouTube watcher started")
+        self.forum_refresh_loop.start()
+        log.info("Slash commands synced, YouTube and Forum watchers started")
 
     def _register_commands(self):
         """Register all slash commands."""
@@ -177,7 +200,8 @@ class MegaMind(discord.Client):
             yt_status = "Active" if config.YOUTUBE_API_KEY and config.YOUTUBE_EXTRACT_PLAYLIST_ID else "Not configured"
             budget_info = _load_budget()
             budget_line = (
-                f"API spend: **${budget_info['total_cost']:.4f}**"
+                f"Codex analyses: **{budget_info.get('subscription_runs', 0)}**; "
+                f"tracked API spend: **${budget_info['total_cost']:.4f}**"
                 if budget_info else "API tracking: not yet started"
             )
             await interaction.response.send_message(
@@ -190,22 +214,43 @@ class MegaMind(discord.Client):
                 f"{budget_line}"
             )
 
-        @self.tree.command(name="search", description="Search extractions by category or tag")
-        @app_commands.describe(query="Category name or tag to search for")
+        @self.tree.command(name="search", description="Find a post in the MegaMind Forum")
+        @app_commands.describe(query="Words in a title or Forum topic tag")
         async def search_command(interaction: discord.Interaction, query: str):
-            from outputs.index import list_entries
-            results = list_entries(status_filter=None)
-            matches = []
-            for line in results.split("\n"):
-                if line.startswith("|") and not line.startswith("| #") and not line.startswith("|---"):
-                    if query.lower() in line.lower():
-                        matches.append(line)
-            if matches:
-                header = "| # | Title | Source | Category | Tags | Status | Date | File |\n|---|-------|--------|----------|------|--------|------|------|\n"
-                table = header + "\n".join(matches[:15])
-                await interaction.response.send_message(f"**Search results for `{query}`:**\n```\n{table}\n```")
-            else:
-                await interaction.response.send_message(f"No extractions found matching `{query}`.")
+            await interaction.response.defer(ephemeral=True)
+            data = await self._forum_data()
+            if not data.get("updated_at"):
+                await interaction.followup.send("Forum search is unavailable right now.", ephemeral=True)
+                return
+            matches = search_forum(data, query)
+            if not matches:
+                await interaction.followup.send(f"No Forum posts matched `{query}`.", ephemeral=True)
+                return
+            embed = discord.Embed(title=f"Forum results: {query[:80]}", colour=DEFAULT_COLOUR)
+            for post in matches:
+                labels = ", ".join(post.get("tags", [])) or "No topic tags"
+                embed.add_field(name=post["title"][:256], value=f"[Open post]({post['url']}) · {labels}"[:1024], inline=False)
+            await interaction.followup.send(embed=embed, ephemeral=True)
+
+        @self.tree.command(name="stats", description="Show MegaMind Forum activity and topics")
+        async def stats_command(interaction: discord.Interaction):
+            await interaction.response.defer(ephemeral=True)
+            summary = forum_stats(await self._forum_data())
+            if not summary["available"]:
+                await interaction.followup.send("Forum statistics are unavailable right now.", ephemeral=True)
+                return
+            embed = discord.Embed(title="MegaMind Forum", colour=DEFAULT_COLOUR)
+            embed.add_field(name="Posts", value=str(summary["total"]), inline=True)
+            embed.add_field(name="Popular topics", value="\n".join(
+                f"{tag}: **{count}**" for tag, count in summary["by_tag"][:10]) or "No tags yet", inline=False)
+            embed.add_field(name="Recent", value="\n".join(
+                f"[{p['title'][:60]}]({p['url']})" for p in summary["recent"]) or "No posts yet", inline=False)
+            budget = _load_budget()
+            if budget:
+                embed.add_field(name="Model usage", value=(
+                    f"Codex subscription: {budget.get('subscription_runs', 0)} analyses; "
+                    f"API: ~US${budget['total_cost']:.2f} tracked (partial estimate)"), inline=False)
+            await interaction.followup.send(embed=embed, ephemeral=True)
 
         @self.tree.command(name="budget", description="Show API usage and cost tracking")
         async def budget_command(interaction: discord.Interaction):
@@ -223,7 +268,7 @@ class MegaMind(discord.Client):
             port = int(__import__("os").getenv("DASHBOARD_PORT", "8050"))
             await interaction.response.send_message(
                 f"**MegaMind Dashboard**\n"
-                f"Knowledge graph, status tracking, and budget overview.\n"
+                f"Searchable library, source review, Forum topics and actions.\n"
                 f"Open: http://localhost:{port}\n\n"
                 f"Start it with: `python dashboard.py`"
             )
@@ -239,6 +284,8 @@ class MegaMind(discord.Client):
         if os.getenv("MEGAMIND_DASHBOARD", "1") == "0":
             log.info("Dashboard disabled (MEGAMIND_DASHBOARD=0)")
             return
+        if getattr(self, "_dashboard_proc", None) and self._dashboard_proc.poll() is None:
+            return
         try:
             port = os.getenv("DASHBOARD_PORT", "8050")
             self._dashboard_proc = subprocess.Popen(
@@ -249,6 +296,33 @@ class MegaMind(discord.Client):
             log.info(f"Dashboard started (PID {self._dashboard_proc.pid}, port {port})")
         except Exception as e:
             log.warning(f"Failed to start dashboard: {e}")
+
+    async def _forum_data(self) -> dict:
+        """Refresh Forum metadata for slash commands, retaining a usable cache on failure."""
+        channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
+        if not channel:
+            try:
+                channel = await self.fetch_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
+            except discord.HTTPException as exc:
+                log.warning("Forum lookup failed: %s", exc)
+                return load_forum_index()
+        if not isinstance(channel, discord.ForumChannel):
+            return load_forum_index()
+        try:
+            return await refresh_forum_index(channel)
+        except discord.HTTPException as exc:
+            log.warning("Forum refresh failed: %s", exc)
+            return load_forum_index()
+
+    @tasks.loop(minutes=30)
+    async def forum_refresh_loop(self):
+        data = await self._forum_data()
+        if data.get("updated_at"):
+            log.info("Forum catalogue: %s posts", len(data["posts"]))
+
+    @forum_refresh_loop.before_loop
+    async def before_forum_refresh(self):
+        await self.wait_until_ready()
 
     async def on_message(self, message: discord.Message):
         """Watch #extract channel for URLs."""
@@ -396,7 +470,7 @@ class MegaMind(discord.Client):
         tags_text = sections.get("Tags", "")
 
         # ── Resolve forum tags (supports multi-tag) ──
-        tag_ids = resolve_forum_tags(category)
+        tag_ids = resolve_forum_tags(category, tags_text)
         applied_tags = []
         if tag_ids and isinstance(channel, discord.ForumChannel):
             tag_id_set = set(tag_ids)
@@ -423,6 +497,8 @@ class MegaMind(discord.Client):
         )
         embed.add_field(name="Source", value=result["source_type"], inline=True)
         embed.add_field(name="Category", value=category, inline=True)
+        if result.get("metadata", {}).get("analysis_model"):
+            embed.add_field(name="Analysis model", value=result["metadata"]["analysis_model"], inline=True)
         if tags_text:
             embed.add_field(name="Tags", value=tags_text, inline=False)
 
@@ -462,6 +538,12 @@ class MegaMind(discord.Client):
         if not thread:
             return
 
+        if isinstance(channel, discord.ForumChannel):
+            try:
+                record_published(channel, thread, result["filename"])
+            except OSError as exc:
+                log.warning("Could not update Forum catalogue: %s", exc)
+
         # ── Add the requester to the thread ──
         if requester_id:
             try:
@@ -477,11 +559,13 @@ class MegaMind(discord.Client):
             budget = _load_budget()
             if budget and budget["history"]:
                 last = budget["history"][-1]
-                await thread.send(
-                    f"-# Cost: ${last['cost']:.4f} | "
-                    f"Session total: ${budget['total_cost']:.4f} "
-                    f"({budget['extraction_count']} extractions)"
-                )
+                if last.get("cost") is None:
+                    await thread.send(f"-# Analysis: {last['model']} via Codex subscription; no API charge recorded")
+                else:
+                    await thread.send(
+                        f"-# API estimate: ${last['cost']:.4f} | "
+                        f"Tracked API total: ${budget['total_cost']:.4f}"
+                    )
         except Exception:
             pass
 
@@ -678,7 +762,7 @@ def _load_budget() -> dict | None:
     try:
         from budget import get_summary
         data = get_summary()
-        return data if data.get("extraction_count", 0) > 0 else None
+        return data if data.get("extraction_count", 0) > 0 or data.get("subscription_runs", 0) > 0 else None
     except Exception:
         return None
 

@@ -8,7 +8,7 @@ Drop a URL for structured, actionable markdown. An authorised 🤖 reaction can 
 
 ## What Is This?
 
-MegaMind is a content capture and work intake system. You drop a link (YouTube video, X/Twitter thread, GitHub repo, or article) and MegaMind:
+MegaMind is a content capture and work intake system. You drop a link (primarily YouTube, also GitHub or an article) and MegaMind:
 
 1. **Extracts** the content using the best available method per source
 2. **Distils** it into structured markdown with insights, actions, and implementation prompts
@@ -40,8 +40,8 @@ The goal: capture useful content on the go, then review implementation requests 
 │                                                               │
 │  Source Router → detects URL type → dispatches:               │
 │                                                               │
-│  YouTube    → verified captions, then Claude analysis         │
-│  X/Twitter  → Grok API (thread extraction via xAI)           │
+│  YouTube    → verified captions + preserved local snapshot   │
+│  X/Twitter  → existing URL handler; further work in backlog  │
 │  Articles   → readability-lxml + BeautifulSoup               │
 │  GitHub     → GitHub API + README scrape                     │
 │                                                               │
@@ -50,13 +50,12 @@ The goal: capture useful content on the go, then review implementation requests 
                             ▼
 ┌──────────────────── AI PROCESSING ───────────────────────────┐
 │                                                               │
-│  Claude Sonnet processes raw content into:                    │
+│  GPT-6 Astra via Codex, with Claude Opus 5.5 API fallback:   │
 │                                                               │
 │  → Summary                                                    │
-│  → Key Insights (numbered, digestible)                        │
-│  → Action Items (concrete next steps)                         │
-│  → Implementation Prompts (numbered, copy-paste ready)        │
-│  → Context Awareness (Claude Code? OpenClaw? tailored output)│
+│  → Four source-specific insights                              │
+│  → Three concrete next steps                                  │
+│  → Zero or one copy-ready implementation prompt              │
 │  → Tags + Category (auto-mapped to Forum topic tags)          │
 │  → Source links + references                                  │
 │                                                               │
@@ -78,7 +77,7 @@ The goal: capture useful content on the go, then review implementation requests 
 │     → Central catalogue: title, source, category, status     │
 │                                                               │
 │  Web Dashboard (localhost:8050)                               │
-│     → Knowledge graph, status management, budget tracking    │
+│     → Searchable library, source review, Forum activity       │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -154,7 +153,8 @@ python coord.py --status 3 "In Progress"     Update entry #3 status
 | `/extract <url>` | Extract insights from a URL |
 | `/check` | Force check the YouTube playlist now |
 | `/status` | Show MegaMind bot status |
-| `/search <query>` | Search extractions by category or tag |
+| `/search <query>` | Find Forum posts by title or topic tag, with links |
+| `/stats` | Forum post counts, topic activity and recent posts |
 | `/budget` | Show API usage and cost tracking |
 | `/dashboard` | Get the dashboard link |
 
@@ -164,13 +164,17 @@ Drop any URL in **#extract** and MegaMind processes it automatically. Results ap
 
 Auto-starts with the Discord bot (or run standalone with `python dashboard.py`).
 
-- Interactive knowledge graph of categories, tags, and extractions
-- Zoom in/out (buttons + scroll wheel), pan (click-drag)
-- Graph-only mode for full-screen visualisation
-- Status management directly from the dashboard
-- API budget overview
+- Searchable, filterable note library with readable insights and actions
+- One-click source text review, method labels, flags and reviewer notes
+- Workflow status editing that preserves tags in the catalogue
+- Forum topics and recent posts, with links back to Discord
+- Model and partial API cost provenance; Codex subscription runs have no API dollar charge
 
 Disable auto-start with `MEGAMIND_DASHBOARD=0`.
+
+Source review records and raw source snapshots stay under ignored local `data/` files. For older YouTube notes, **View source text** can recover captions from the same video ID; it labels these as recovered, not as the original ingestion snapshot. The source method says how text was obtained, not whether every claim in the source is true.
+
+Model selection lives in `.env`: `MODEL_PROVIDER=codex` and `CODEX_MODEL=gpt-6-astra` use the local Codex CLI sign-in and subscription allowance. If Codex is unavailable, MegaMind uses the Anthropic API key with `CLAUDE_MODEL=claude-opus-5-5`. ChatGPT/Codex subscriptions do not pay ordinary OpenAI API charges. The concise analysis prompt is in `prompts/analysis-v2.md`.
 
 ---
 
@@ -220,19 +224,19 @@ Every extraction produces a markdown file and a Forum post:
 
 ```markdown
 # [Title]
-> Source: YouTube | Extracted: 2025-01-15 14:30 UTC | Method: youtube_transcript_api
+> Source: YouTube | Extracted: 2026-09-23 14:30 UTC | Method: youtube_transcript_api | Analysis: gpt-6-astra
 > URL: https://...
 
-### Summary         — What this content is about
-### Key Insights    — Bullet list of takeaways
-### Actions         — Checkbox list of concrete next steps
-### Implementation Prompts — Copy-paste-ready prompts for Claude Code
-### Links & Resources     — All referenced URLs/tools
+### Summary         — Two plain sentences about value
+### Key Insights    — Four source-specific takeaways
+### Actions         — Three concrete next steps
+### Implementation Prompts — At most one useful prompt, or None
+### Links & Resources     — Original URL and explicitly mentioned resources
 ### Tags            — For categorisation
 ### Category        — Primary category (maps to Forum tags)
 ```
 
-**Context awareness:** When content mentions Claude Code, Anthropic, MCP, or similar tools, Implementation Prompts are automatically tailored with Claude Code-specific commands, slash commands, hooks, and CLAUDE.md patterns.
+The analysis target is 400 words or fewer. Claims stay attributed to the speaker when MegaMind has not independently verified them.
 
 ---
 
@@ -241,7 +245,7 @@ Every extraction produces a markdown file and a Forum post:
 | Source | Method | Why |
 |--------|--------|-----|
 | YouTube | YouTube captions or yt-dlp subtitles | Transcript tied to the requested video ID |
-| X/Twitter | Grok API (xAI) | Platform access — only xAI can reliably pull threads |
+| X/Twitter | Existing Grok URL handler | Improvements deferred; YouTube is the priority |
 | Articles/Blogs | readability-lxml + BeautifulSoup | Clean extraction, handles most sites |
 | GitHub repos | GitHub API + README scrape | Structured repo info + documentation |
 
@@ -318,12 +322,12 @@ python youtube_auth.py
 
 ## API Budget Tracking
 
-MegaMind tracks token usage and estimated costs for every extraction:
+MegaMind counts Codex subscription analyses separately from tracked Anthropic API calls:
 
-- Per-extraction cost breakdown (input/output tokens, model, cost)
-- Running session totals
+- Anthropic API cost estimate from input/output tokens and model rate
+- Codex run count without a fabricated API charge
 - Last 100 entries in history
-- Available via `/budget` slash command or on the dashboard
+- Available via `/budget`, `/stats`, or the dashboard footer
 
 Data is persisted to `api_budget.json` and survives restarts.
 
@@ -393,7 +397,10 @@ The service auto-starts on WSL boot (user linger enabled). The dashboard auto-st
 MegaMind/
 ├── coord.py                  # CLI entry point
 ├── discord_bot.py            # MegaMind Discord bot (Forum posting, auto-tagging)
-├── dashboard.py              # Web dashboard (knowledge graph + status)
+├── dashboard.py              # Web dashboard (library + source review + Forum)
+├── dashboard_ui.html         # Browser interface
+├── source_evidence.py        # Private raw snapshots and review decisions
+├── forum_index.py            # Cached Discord Forum post catalogue
 ├── budget.py                 # API usage and cost tracking
 ├── youtube_auth.py           # YouTube OAuth2 setup helper
 ├── config.py                 # Configuration (.env, paths, API keys)
@@ -410,7 +417,7 @@ MegaMind/
 │   ├── github.py             # GitHub via API + scraping
 │   └── article.py            # Articles via readability + scraping
 ├── processors/
-│   └── ai_processor.py       # Claude API insight extraction + category tagging
+│   └── ai_processor.py       # Codex analysis + Claude API fallback
 ├── outputs/
 │   ├── formatter.py          # Discord embed + Forum post formatting
 │   ├── index.py              # Central INDEX.md management
@@ -436,10 +443,10 @@ MegaMind/
 | Discord Bot | discord.py — watches #extract, posts to Forum with auto-tagging |
 | YouTube Watcher | google-api-python-client — playlist polling + OAuth2 management |
 | Grok/xAI | OpenAI-compatible client for X/Twitter threads |
-| LLM | Anthropic Claude Sonnet (primary) |
+| LLM | Codex GPT-6 Astra (subscription), Claude Opus 5.5 (API fallback) |
 | Articles | readability-lxml + BeautifulSoup |
 | Obsidian | File-based via WSL mount, synced via Obsidian Sync |
-| Dashboard | Python HTTPServer + Canvas-based force graph |
+| Dashboard | Local Python HTTPServer + searchable browser interface |
 | Budget | JSON-based tracking with per-model pricing |
 
 ---
@@ -479,14 +486,15 @@ MegaMind runs alongside **OpenClaw** (AI assistant bot) on the same Discord serv
 - [x] Mobile capture (GitHub Actions)
 - [x] Controlled 🤖 reaction → pending local intake (disabled by default)
 - [x] API budget tracking
-- [x] Web dashboard (knowledge graph, zoom/pan, status management)
+- [x] Web dashboard (searchable library, status, source review, Forum activity)
 - [x] systemd user service (`megamind.service`)
 - [x] Discord Forum channel with 13 topic tags
 - [x] Multi-tag auto-categorisation (up to 5 tags per post)
 - [x] YouTube oEmbed title resolution
 - [x] Requester ID tracking (thread visibility fix)
-- [ ] `/stats` command — Forum analytics (extraction counts by tag, recent activity)
-- [ ] Improved `/search` — search Forum thread titles and tags directly
+- [x] `/stats` command — Forum analytics (posts by tag, recent activity)
+- [x] Improved `/search` — Forum thread title and tag search
+- [ ] X/Twitter integration improvements — deferred while YouTube is prioritised
 - [ ] Re-extraction — re-process existing URLs with updated AI processing
 - [ ] OpenClaw skill integration — trigger extractions from any channel
 - [ ] Cross-bot status awareness — each bot knows if the other is online

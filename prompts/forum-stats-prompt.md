@@ -1,5 +1,7 @@
 # MegaMind /stats Command — Forum Analytics
 
+> Implemented in MegaMind: `/stats`, Forum title/tag `/search`, and the dashboard Forum view. This file is retained as the original feature request; its IDs and older dashboard description are historical and should not be used as configuration.
+
 Paste this into a fresh Claude Code session at `\\wsl.localhost\Ubuntu\`.
 
 ---

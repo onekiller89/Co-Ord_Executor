@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MegaMind · Library</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0b151d; --panel:#12232d; --panel2:#172b36; --line:#2c444d; --text:#eef4f0; --muted:#9eb4b7; --mint:#71dfc1; --mintdark:#173d37; --gold:#eac98c; --red:#f28f88; --blue:#9fc9ee; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(ellipse at 12% -10%,#1a4547 0,transparent 34%),var(--bg); color:var(--text); font-family:"Segoe UI",Inter,system-ui,sans-serif; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    a { color:var(--mint); }
+    a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible { outline:2px solid var(--mint); outline-offset:2px; }
+    .shell { max-width:1580px; margin:auto; padding:0 28px 64px; }
+    .topbar { height:76px; border-bottom:1px solid var(--line); background:#0c1b23d9; backdrop-filter:blur(15px); }
+    .topbar-inner { max-width:1580px; padding:0 28px; margin:auto; height:100%; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:11px; font-size:20px; font-weight:750; letter-spacing:-.04em; white-space:nowrap; }
+    .brand-mark { width:34px; height:34px; display:grid; place-items:center; border-radius:10px; background:var(--mint); color:#08362d; font-size:21px; font-weight:900; box-shadow:0 0 25px #50d9b348; }
+    .nav { display:flex; gap:6px; padding:5px; border:1px solid var(--line); border-radius:12px; background:#10212a; }
+    .nav button { background:transparent; border:0; border-radius:8px; color:var(--muted); padding:9px 16px; font-size:13px; font-weight:650; }
+    .nav button.active { background:#24443f; color:#dbfff3; }
+    .sync { color:var(--muted); font-size:12px; white-space:nowrap; }
+    .sync::before { content:""; display:inline-block; height:7px; width:7px; border-radius:50%; background:var(--mint); margin-right:8px; vertical-align:middle; }
+    .hero { padding:45px 0 26px; display:flex; justify-content:space-between; gap:24px; align-items:flex-end; }
+    .eyebrow { color:var(--mint); font-size:11px; font-weight:800; letter-spacing:.19em; text-transform:uppercase; margin:0 0 11px; }
+    h1 { font-size:clamp(29px,3vw,42px); letter-spacing:-.055em; line-height:1.07; margin:0 0 11px; }
+    .hero p { color:var(--muted); font-size:15px; line-height:1.5; margin:0; max-width:650px; }
+    .hero-link { flex:none; color:var(--mint); font-size:13px; text-decoration:none; border:1px solid #426d64; border-radius:10px; padding:11px 14px; font-weight:650; }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:26px; }
+    .metric { text-align:left; border:1px solid var(--line); border-radius:14px; background:linear-gradient(145deg,#193039,#12232d 75%); color:var(--text); padding:17px 20px; min-height:105px; transition:transform .15s,border-color .15s; }
+    .metric:hover { transform:translateY(-2px); border-color:#4d8074; }
+    .metric span { display:block; color:var(--muted); font-size:12px; font-weight:600; }
+    .metric strong { display:block; font-size:30px; letter-spacing:-.055em; line-height:1.15; margin:5px 0; }
+    .metric small { display:block; color:#88a9aa; font-size:11px; }
+    .metric.attention strong { color:var(--gold); }
+    .metric.cost strong { color:var(--mint); }
+    .section-head { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin:0 0 16px; }
+    .section-head h2 { font-size:24px; letter-spacing:-.04em; margin:0 0 5px; }
+    .section-head p { margin:0; color:var(--muted); font-size:13px; }
+    .result-count { color:var(--muted); font-size:12px; white-space:nowrap; }
+    .toolbar { display:grid; grid-template-columns:minmax(220px,2fr) repeat(3,minmax(130px,1fr)) minmax(125px,.8fr); gap:10px; margin-bottom:14px; }
+    .toolbar input,.toolbar select { width:100%; height:42px; background:#132630; border:1px solid var(--line); border-radius:9px; color:var(--text); padding:0 13px; font-size:13px; }
+    .toolbar input::placeholder { color:#8da6aa; }
+    .layout { display:grid; grid-template-columns:minmax(330px,.9fr) minmax(480px,1.3fr); gap:16px; align-items:start; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+    .list-pane { max-height:calc(100vh - 280px); min-height:500px; overflow:auto; }
+    .list-head { display:flex; align-items:center; justify-content:space-between; padding:15px 17px; border-bottom:1px solid var(--line); position:sticky; top:0; background:#12232df5; z-index:2; }
+    .list-head b { font-size:12px; letter-spacing:.11em; text-transform:uppercase; color:var(--muted); }
+    .list-head span { font-size:12px; color:var(--muted); }
+    .entry { width:100%; display:block; text-align:left; padding:18px; border:0; border-bottom:1px solid #29404a; background:transparent; color:var(--text); transition:background .13s; }
+    .entry:hover { background:#1b333e; }
+    .entry.selected { background:#1c3a3d; box-shadow:inset 3px 0 var(--mint); }
+    .entry-title { display:block; font-size:15px; line-height:1.35; font-weight:700; margin:8px 0; }
+    .entry-excerpt { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; color:var(--muted); font-size:12px; line-height:1.45; margin:0 0 10px; }
+    .entry-meta,.pills { display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+    .entry-meta { color:#a7bec0; font-size:11px; }
+    .pill { display:inline-flex; align-items:center; border:1px solid #34515a; background:#1b333e; color:#b9d4d3; border-radius:999px; padding:4px 8px; font-size:11px; font-weight:650; }
+    .pill.good { color:#a9efda; background:#163a34; border-color:#2c6559; }
+    .pill.warn { color:#f3d6a1; background:#453823; border-color:#725835; }
+    .pill.bad { color:#ffb7b3; background:#4c292d; border-color:#834147; }
+    .pill.info { color:#b7d9f4; background:#223b4b; border-color:#3f647d; }
+    .detail { min-height:500px; max-height:calc(100vh - 280px); overflow:auto; }
+    .detail-top { padding:26px 28px 18px; border-bottom:1px solid var(--line); }
+    .detail-top h2 { font-size:clamp(22px,2vw,29px); letter-spacing:-.045em; line-height:1.22; margin:13px 0 11px; }
+    .detail-sub { display:flex; flex-wrap:wrap; gap:12px; color:var(--muted); font-size:12px; }
+    .detail-body { padding:0 28px 30px; }
+    .block { padding:21px 0; border-bottom:1px solid var(--line); }
+    .block:last-child { border-bottom:0; }
+    .block h3 { font-size:12px; text-transform:uppercase; letter-spacing:.13em; color:var(--mint); margin:0 0 12px; }
+    .block p { font-size:14px; line-height:1.6; margin:0; color:#d8e7e5; }
+    .block ul,.block ol { margin:0; padding-left:22px; }
+    .block li { margin:0 0 10px; line-height:1.5; font-size:13px; color:#d9e7e6; }
+    .actions li::marker { color:var(--mint); font-weight:800; }
+    .buttons { display:flex; flex-wrap:wrap; gap:9px; margin:17px 0 0; }
+    .button { display:inline-flex; align-items:center; justify-content:center; min-height:35px; border:1px solid #4d716d; border-radius:8px; background:#203c3d; color:#d4f6ed; padding:7px 11px; font-size:12px; font-weight:700; text-decoration:none; }
+    .button:hover { background:#2c5652; }
+    .button.primary { background:var(--mint); border-color:var(--mint); color:#082c28; }
+    .button.flag { color:#ffd0ca; border-color:#925256; background:#3a292c; }
+    .status-row { display:flex; align-items:center; gap:12px; margin-top:16px; }
+    .status-row label { color:var(--muted); font-size:12px; }
+    .status-row select,.review-note { background:#0e202a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:12px; }
+    .review-note { width:100%; min-height:62px; margin-top:13px; resize:vertical; }
+    .review-hint { color:var(--muted); font-size:12px; line-height:1.5; margin:0 0 12px; }
+    .transcript { white-space:pre-wrap; overflow:auto; max-height:290px; padding:15px; margin-top:12px; background:#0b1c25; border:1px solid var(--line); border-radius:9px; color:#c8dcda; font:12px/1.55 Consolas,monospace; }
+    .empty { padding:38px 22px; color:var(--muted); font-size:13px; text-align:center; line-height:1.6; }
+    .forum-grid { display:grid; grid-template-columns:minmax(250px,.8fr) minmax(380px,1.2fr); gap:16px; }
+    .forum-panel { padding:22px; }
+    .forum-panel h3 { margin:0 0 6px; font-size:18px; }
+    .forum-panel .sub { margin:0 0 18px; font-size:12px; color:var(--muted); line-height:1.55; }
+    .topic { width:100%; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border:0; border-bottom:1px solid var(--line); color:var(--text); background:transparent; text-align:left; font-size:13px; }
+    .topic:hover { color:var(--mint); }
+    .topic strong { color:var(--mint); }
+    .topic-bar { display:block; height:3px; background:#2c4b4c; border-radius:3px; margin-top:7px; }
+    .topic-bar i { display:block; height:100%; background:var(--mint); border-radius:3px; }
+    .forum-post { display:block; padding:13px 0; border-bottom:1px solid var(--line); text-decoration:none; }
+    .forum-post strong { display:block; color:var(--text); font-size:13px; line-height:1.4; }
+    .forum-post small { color:var(--muted); display:block; margin-top:5px; }
+    .forum-post:hover strong { color:var(--mint); }
+    .footer { color:#759396; font-size:11px; margin-top:32px; line-height:1.5; }
+    #toast { position:fixed; bottom:22px; right:22px; background:#28534a; color:#eafff8; padding:12px 16px; border-radius:10px; border:1px solid #5ca38b; font-size:13px; z-index:20; box-shadow:0 15px 40px #0007; display:none; }
+    @media(max-width:1050px) { .toolbar { grid-template-columns:repeat(3,1fr); } .toolbar input { grid-column:1/-1; } .layout { grid-template-columns:1fr; } .list-pane,.detail { max-height:none; min-height:0; } .list-pane { max-height:450px; } }
+    @media(max-width:670px) { .shell,.topbar-inner { padding-left:16px; padding-right:16px; } .topbar { height:auto; } .topbar-inner { flex-wrap:wrap; padding-top:12px; padding-bottom:12px; } .sync { display:none; } .nav { width:100%; } .nav button { flex:1; padding:8px 5px; } .hero { padding-top:30px; } .hero-link { display:none; } .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); } .metric { padding:14px; } .toolbar { grid-template-columns:repeat(2,1fr); } .detail-top,.detail-body { padding-left:18px; padding-right:18px; } .forum-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="topbar-inner">
+    <div class="brand"><span class="brand-mark">M</span><span>MegaMind</span></div>
+    <nav class="nav" aria-label="Dashboard views">
+      <button id="nav-library" class="active" type="button">Library</button>
+      <button id="nav-review" type="button">Source review</button>
+      <button id="nav-forum" type="button">Forum</button>
+    </nav>
+    <div class="sync" id="sync-status">Loading your library</div>
+  </div></header>
+  <main class="shell">
+    <section class="hero"><div><div class="eyebrow">CAPTURE → UNDERSTAND → ACT</div><h1>Make something of what you saved.</h1><p>Find the idea worth your time, see why it matters, and take the next useful step.</p></div><a class="hero-link" href="https://discord.com/channels/1474002241319866439/1476145053721301149" target="_blank" rel="noopener noreferrer">Add a link in #extract ↗</a></section>
+    <section class="metrics" aria-label="Overview">
+      <button class="metric" type="button" data-metric="all"><span>Saved notes</span><strong id="metric-total">–</strong><small>Browse the library</small></button>
+      <button class="metric" type="button" data-metric="action"><span>Ideas to try</span><strong id="metric-action">–</strong><small>Notes with useful next steps</small></button>
+      <button class="metric attention" type="button" data-metric="review"><span>Source attention</span><strong id="metric-review">–</strong><small>Unverified, model-only or flagged</small></button>
+      <button class="metric cost" type="button" data-metric="recent"><span>Added this month</span><strong id="metric-recent">–</strong><small>New sources in 30 days</small></button>
+    </section>
+    <section id="library-view">
+      <div class="section-head"><div><h2 id="view-title">Your library</h2><p id="view-subtitle">Search notes by title, topic, source or action.</p></div><span class="result-count" id="result-count"></span></div>
+      <div class="toolbar" aria-label="Library filters">
+        <input id="search" type="search" placeholder="Search ideas, actions, tags…" aria-label="Search notes">
+        <select id="category-filter" aria-label="Category"><option value="">All categories</option></select>
+        <select id="source-filter" aria-label="Source"><option value="">All sources</option></select>
+        <select id="status-filter" aria-label="Workflow status"><option value="">All statuses</option></select>
+        <select id="sort-filter" aria-label="Sort order"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="title">Title A–Z</option></select>
+      </div>
+      <div class="layout"><div class="panel list-pane"><div class="list-head"><b>Notes</b><span id="list-count"></span></div><div id="entry-list"></div></div><article class="panel detail" id="detail" aria-live="polite"><div class="empty">Choose a note to see its insights and next steps.</div></article></div>
+    </section>
+    <section id="forum-view" hidden><div class="section-head"><div><h2>Forum activity</h2><p>Browse the real Discord posts by topic. Topic emojis make scanning quicker; they are not quality ratings.</p></div><span class="result-count" id="forum-count"></span></div><div class="forum-grid"><div class="panel forum-panel"><h3>Topics</h3><p class="sub">Choose a topic to filter the posts on the right.</p><div id="forum-topics"></div></div><div class="panel forum-panel"><h3 id="forum-list-title">Recent posts</h3><p class="sub" id="forum-freshness"></p><div id="forum-posts"></div></div></div></section>
+    <p class="footer">Source labels describe how MegaMind obtained text. They do not certify every claim in a video or AI note. <span id="cost-note"></span></p>
+  </main>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const state = {data:null, view:'library', quick:'all', query:'', category:'', source:'', status:'', sort:'newest', selected:null, forumTag:''};
+    const $ = id => document.getElementById(id);
+    const emoji = {'AI Agents':'🤖','AI Tools':'🔧','AI Strategy':'🧠','Prompting':'💬','Automation':'⚡','Productivity':'📈','Development':'💻','DevOps':'🚀','Content Creation':'🎬','Data Science':'📊','Security':'🔒','Fitness':'💪','Finance':'💰'};
+    function node(tag, cls='', value='') { const x=document.createElement(tag); if(cls)x.className=cls; x.textContent=value; return x; }
+    function clear(x){x.replaceChildren();}
+    function fmtDate(x){ if(!x)return 'Date unknown'; const d=new Date(x); return Number.isNaN(d.getTime())?x:d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'numeric'}); }
+    function toast(message){ const x=$('toast');x.textContent=message;x.style.display='block';setTimeout(()=>x.style.display='none',3500); }
+    function safeLink(url,label,cls='button') { const a=node('a',cls,label); if(/^https?:\/\//i.test(url)||/^\/api\/note\?num=\d+$/.test(url)){a.href=url;a.target='_blank';a.rel='noopener noreferrer';}else{a.href='#';a.setAttribute('aria-disabled','true');}return a; }
+    function sourcePill(e){ const m={caption_backed:['Captions linked','good'],quarantined:['Unverified source','bad'],model_only:['Model-only source','warn'],manual_input:['Manual source','info'],fetched_text:['Fetched text','info'],unknown:['Source unknown','warn']}; const [label,kind]=m[e.source_state]||m.unknown;return node('span','pill '+kind,label); }
+    function statusPill(status){ const c=status==='Done'?'good':status==='In Progress'?'info':status==='TODO'?'warn':'';return node('span','pill '+c,status); }
+    function setView(view){state.view=view;$('library-view').hidden=view==='forum';$('forum-view').hidden=view!=='forum';for(const x of ['library','review','forum'])$('nav-'+x).classList.toggle('active',x===view);if(view==='review'){$('view-title').textContent='Source review';$('view-subtitle').textContent='Check the original text behind each note. Flag an issue or mark it checked when you are satisfied.';}else{$('view-title').textContent='Your library';$('view-subtitle').textContent='Search notes by title, topic, source or action.';}render();}
+    function needsAttention(e){return e.source_state==='quarantined'||e.source_state==='model_only'||e.source_state==='unknown'||e.review.state==='flagged';}
+    function filtered(){let a=state.data.entries.filter(e=>{if(state.view==='review'&&e.review.state==='checked')return false;if(state.quick==='action'&&(!e.actions.length||['Done','Cancel'].includes(e.status)))return false;if(state.quick==='review'&&!needsAttention(e))return false;if(state.quick==='recent'&&(Date.now()-new Date(e.date).getTime())>30*86400000)return false;if(state.category&&e.category!==state.category)return false;if(state.source&&e.source!==state.source)return false;if(state.status&&e.status!==state.status)return false;const q=state.query.toLocaleLowerCase();return !q||[e.title,e.summary,e.category,e.source,e.tags.join(' '),e.insights.join(' '),e.actions.join(' '),e.prompt].join(' ').toLocaleLowerCase().includes(q);});a.sort((a,b)=>state.view==='review'?(Number(needsAttention(b))-Number(needsAttention(a))||b.num-a.num):state.sort==='title'?a.title.localeCompare(b.title):state.sort==='oldest'?a.num-b.num:b.num-a.num);return a;}
+    function renderList(){const entries=filtered();$('result-count').textContent=entries.length+' shown';$('list-count').textContent=entries.length+' results';const list=$('entry-list');clear(list);if(!entries.length){list.append(node('div','empty','Nothing matches these filters. Try a broader search.'));$('detail').replaceChildren(node('div','empty','Choose a note from the list.'));return;}if(!entries.some(e=>e.num===state.selected))state.selected=entries[0].num;for(const e of entries){const card=node('button','entry'+(e.num===state.selected?' selected':''));card.type='button';card.setAttribute('aria-label','Open '+e.title);const top=node('div','entry-meta');top.append(sourcePill(e),statusPill(e.status),node('span','',fmtDate(e.date)));card.append(top,node('strong','entry-title',e.title));if(e.summary)card.append(node('p','entry-excerpt',e.summary));const meta=node('div','entry-meta');meta.append(node('span','',e.category));for(const tag of e.tags.slice(0,2))meta.append(node('span','pill','#'+tag));card.append(meta);card.addEventListener('click',()=>{state.selected=e.num;renderList();});list.append(card);}renderDetail(entries.find(e=>e.num===state.selected));}
+    function detailBlock(title){const s=node('section','block');s.append(node('h3','',title));return s;}
+    function addList(parent,items,ordered=false){if(!items.length){parent.append(node('p','', 'No source-specific items recorded.'));return;}const l=document.createElement(ordered?'ol':'ul');if(ordered)l.className='actions';for(const item of items)l.append(node('li','',item));parent.append(l);}
+    async function post(path,payload){const r=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json','X-MegaMind-Local':'1'},body:JSON.stringify(payload)});const d=await r.json();if(!r.ok||!d.ok)throw new Error(d.error||'Could not save');return d;}
+    async function saveStatus(e,status){try{await post('/api/status',{num:e.num,status});e.status=status;toast('Workflow status saved');render();}catch(err){toast(err.message);renderDetail(e);}}
+    async function saveReview(e,reviewState,note){try{const d=await post('/api/review',{num:e.num,state:reviewState,note});e.review=d.review;toast('Source review saved');render();}catch(err){toast(err.message);}}
+    function renderDetail(e){const target=$('detail');clear(target);if(!e)return;const top=node('div','detail-top'),pills=node('div','pills');pills.append(sourcePill(e),statusPill(e.status));if(e.review.state==='checked')pills.append(node('span','pill good','Checked by you'));if(e.review.state==='flagged')pills.append(node('span','pill bad','Flagged'));top.append(pills,node('h2','',e.title));const sub=node('div','detail-sub');sub.append(node('span','',e.source),node('span','',e.category),node('span','',fmtDate(e.date)));top.append(sub);const buttons=node('div','buttons');if(e.source_url)buttons.append(safeLink(e.source_url,'Open original ↗','button primary'));buttons.append(safeLink('/api/note?num='+e.num,'Read full note ↗'));if(e.forum_url)buttons.append(safeLink(e.forum_url,'Open Forum post ↗'));top.append(buttons);const status=node('div','status-row');status.append(node('label','', 'Workflow status'));const select=node('select');select.setAttribute('aria-label','Workflow status');for(const s of ['Backlog','TODO','In Progress','Done','Cancel']){const o=node('option','',s);o.value=s;select.append(o);}select.value=e.status;select.addEventListener('change',()=>saveStatus(e,select.value));status.append(select);top.append(status);target.append(top);const body=node('div','detail-body');let block=detailBlock('In a nutshell');block.append(node('p','',e.summary||'No summary saved for this item.'));body.append(block);block=detailBlock('What matters');addList(block,e.insights);body.append(block);block=detailBlock('Useful next steps');addList(block,e.actions,true);body.append(block);block=detailBlock('Source evidence');const description={caption_backed:'MegaMind fetched captions tied to this YouTube video ID. The model’s conclusions still need judgment.',quarantined:'This older note was quarantined because the original video content could not be established. Do not rely on its claims.',model_only:'A model described the URL without a retrieved post or transcript. Check the original before acting.',manual_input:'Text was pasted manually. Compare it with the original source.',fetched_text:'Text was fetched from the linked page. Compare the note with the original for accuracy.',unknown:'The extraction method is unknown. Check the original before relying on this note.'};block.append(node('p','review-hint',description[e.source_state]||description.unknown));block.append(node('p','review-hint','Recorded method: '+e.source_method+'. '+(e.has_snapshot?'A local source snapshot is available.':'The original input was not saved with this older note.')));block.append(node('p','review-hint','Analysis model: '+e.analysis_model+'. This label identifies the model; it does not verify its claims.'));const sourceButtons=node('div','buttons'),sourceBtn=node('button','button','View source text');sourceBtn.type='button';sourceBtn.addEventListener('click',async()=>{sourceBtn.disabled=true;sourceBtn.textContent='Loading captions…';try{const r=await fetch('/api/source?num='+e.num);const d=await r.json();if(!r.ok)throw new Error(d.error||'Source unavailable');const old=block.querySelector('.transcript');if(old)old.remove();const note=node('p','review-hint',d.recovered?'Recovered now from the same video ID; this is not the exact original ingestion snapshot.':'Captured at ingestion and saved locally.');block.append(note,node('pre','transcript',d.text));e.has_snapshot=true;sourceBtn.textContent='Refresh source view';}catch(err){toast(err.message);sourceBtn.textContent='Source text unavailable';}finally{sourceBtn.disabled=false;}});sourceButtons.append(sourceBtn);block.append(sourceButtons);const note=node('textarea','review-note');note.placeholder='Optional: what did you check or question?';note.value=e.review.note||'';note.setAttribute('aria-label','Source review note');block.append(note);const reviewButtons=node('div','buttons');const checked=node('button','button','Mark checked'),flagged=node('button','button flag','Flag an issue');checked.type='button';flagged.type='button';checked.addEventListener('click',()=>saveReview(e,'checked',note.value));flagged.addEventListener('click',()=>saveReview(e,'flagged',note.value));reviewButtons.append(checked,flagged);block.append(reviewButtons);body.append(block);if(e.prompt&&e.prompt!=='None'){block=detailBlock('Ready-to-use prompt');block.append(node('p','',e.prompt));body.append(block);}target.append(body);}
+    function renderForum(){const data=state.data.forum_stats;$('forum-count').textContent=data.available?data.total+' posts':'Unavailable';$('forum-freshness').textContent=data.available?'Updated '+fmtDate(data.updated_at):'Forum data will appear after the bot refreshes its catalogue.';const topics=$('forum-topics');clear(topics);const posts=$('forum-posts');clear(posts);if(!data.available){topics.append(node('div','empty','Waiting for the Discord Forum catalogue.'));posts.append(node('div','empty','The library remains available while Forum data is unavailable.'));return;}const topCount=Math.max(1,...data.by_tag.map(x=>x[1]));const all=node('button','topic','All topics · '+data.total);all.addEventListener('click',()=>{state.forumTag='';renderForum();});topics.append(all);for(const [tag,count] of data.by_tag){const button=node('button','topic');const inner=node('span','',(emoji[tag]||'•')+' '+tag);const bar=node('span','topic-bar');const fill=node('i');fill.style.width=(100*count/topCount)+'%';bar.append(fill);inner.append(bar);button.append(inner,node('strong','',String(count)));button.addEventListener('click',()=>{state.forumTag=tag;renderForum();});topics.append(button);}const filtered=state.data.forum.posts.filter(p=>!state.forumTag||p.tags.includes(state.forumTag));$('forum-list-title').textContent=state.forumTag?state.forumTag+' posts':'Recent posts';for(const p of filtered.slice(0,40)){const link=safeLink(p.url,'','forum-post');link.append(node('strong','',p.title),node('small','',(p.tags||[]).join(' · ')+'  ·  '+fmtDate(p.created_at)));posts.append(link);}if(!filtered.length)posts.append(node('div','empty','No posts in this topic yet.'));}
+    function render(){if(!state.data)return;$('metric-total').textContent=state.data.counts.total;$('metric-action').textContent=state.data.counts.ideas_to_try;$('metric-review').textContent=state.data.counts.source_review;$('metric-recent').textContent=state.data.counts.recent_30d;const b=state.data.budget;$('cost-note').textContent='Codex subscription analyses: '+b.subscription_runs+'. '+(b.total_cost==null?'No separate API charge recorded.':'Tracked API cost: US$'+Number(b.total_cost).toFixed(2)+' (partial estimate).');if(state.view==='forum')renderForum();else renderList();}
+    function populate(select,values,label){for(const value of values){const o=node('option','',value);o.value=value;select.append(o);}select.setAttribute('title',label);}
+    async function load(){try{const r=await fetch('/api/overview');if(!r.ok)throw new Error('Dashboard unavailable');state.data=await r.json();populate($('category-filter'),Object.keys(state.data.counts.by_category).sort(),'Category');populate($('source-filter'),Object.keys(state.data.counts.by_source).sort(),'Source');populate($('status-filter'),Object.keys(state.data.counts.by_status).sort(),'Status');$('sync-status').textContent='Local library ready';render();}catch(err){$('sync-status').textContent='Could not load';toast(err.message);}}
+    for(const v of ['library','review','forum'])$('nav-'+v).addEventListener('click',()=>{state.quick='all';setView(v);});for(const [id,key] of [['search','query'],['category-filter','category'],['source-filter','source'],['status-filter','status'],['sort-filter','sort']])$(id).addEventListener(id==='search'?'input':'change',e=>{state[key]=e.target.value;renderList();});for(const metric of document.querySelectorAll('[data-metric]'))metric.addEventListener('click',()=>{state.quick=metric.dataset.metric;setView('library');});load();
+  </script>
+</body>
+</html>
