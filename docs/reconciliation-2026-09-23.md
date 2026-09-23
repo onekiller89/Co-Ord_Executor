@@ -23,9 +23,9 @@ The one `main`-only commit is the GitHub merge of the live branch's earlier ance
 
 ## Validation and remaining gates
 
-The six local unit tests passed, including a temporary Git remote that proved the publisher refuses a feature branch and excludes staged code from an extraction commit. `git diff --check` passed. This is code validation only: the running bot, Discord delivery, YouTube extraction, GitHub Actions and the new path have not been exercised with these changes.
+The six local unit tests passed, including a temporary Git remote that proved the publisher refuses a feature branch, excludes staged code from an extraction commit and pauses when the remote advances. `git diff --check` and Python compilation passed. The production virtual environment contains `youtube-transcript-api` 1.2.4 and `yt-dlp` 2026.6.9. This is code validation only: the running bot, Discord delivery, YouTube extraction, GitHub Actions and the new path have not been exercised with these changes.
 
-Before cutover, re-fetch GitHub and re-check both worktrees because the live bot may create more extraction commits. Review the 67 extraction records before publishing; prior provenance investigation found at least one source/content mismatch. Check the new dependencies and a representative end-to-end extraction before restart.
+Before cutover, re-fetch GitHub and re-check both worktrees because the live bot may create more extraction commits. Review the 67 extraction records before merging; prior provenance investigation reported at least one source/content mismatch. Run a representative end-to-end extraction after restart.
 
 The planned cutover needs one coordinated sequence: review/push the integration branch, merge to GitHub `main`, rename the GitHub repository, update remotes and documented URLs, stop the service, preserve ignored runtime files, move the production checkout to `~/MegaMind`, update the systemd unit, point the Codex project at the new folder, restart, then verify a real extraction and its GitHub commit. Retain the old checkout path and unit backup until that verification succeeds. Do not switch the production checkout while its service is running.
 
