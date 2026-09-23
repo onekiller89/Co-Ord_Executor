@@ -19,7 +19,7 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 import urllib.parse
 
 import config
@@ -562,10 +562,12 @@ class DashboardHandler(SimpleHTTPRequestHandler):
             entries = _parse_index_entries()
             budget = _load_budget()
             html = _build_html(entries, budget)
+            body = html.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            self.wfile.write(html.encode("utf-8"))
+            self.wfile.write(body)
         elif self.path.startswith("/api/entries"):
             entries = _parse_index_entries()
             self._json_response(entries)
@@ -605,7 +607,7 @@ def main():
     parser.add_argument("--port", type=int, default=DASHBOARD_PORT, help="Port (default: 8050)")
     args = parser.parse_args()
 
-    server = HTTPServer(("0.0.0.0", args.port), DashboardHandler)
+    server = ThreadingHTTPServer(("0.0.0.0", args.port), DashboardHandler)
     print(f"MegaMind Dashboard running at http://localhost:{args.port}")
     try:
         server.serve_forever()
