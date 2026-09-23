@@ -1,23 +1,23 @@
 # MegaMind
 
-Personal content capture, extraction & knowledge pipeline with agent-driven execution.
+Personal content capture, extraction & controlled work intake.
 
-Drop a URL — get structured, actionable markdown. React with 🤖 — queue it for execution.
+Drop a URL for structured, actionable markdown. An authorised 🤖 reaction can record a pending work intake.
 
 ---
 
 ## What Is This?
 
-MegaMind is a frictionless content capture and execution system. You drop a link (YouTube video, X/Twitter thread, GitHub repo, or article) and MegaMind:
+MegaMind is a content capture and work intake system. You drop a link (YouTube video, X/Twitter thread, GitHub repo, or article) and MegaMind:
 
 1. **Extracts** the content using the best available method per source
 2. **Distils** it into structured markdown with insights, actions, and implementation prompts
 3. **Posts** the output to a Discord Forum channel with auto-categorised topic tags
 4. **Indexes** it in a centralised catalogue with category, tags, and status tracking
 5. **Stores** it in Obsidian for offline access across all devices
-6. **Queues execution** — react with 🤖 on any prompt and it creates a GitHub Issue for action
+6. **Captures work intake** — an authorised 🤖 reaction records a pending request for separate approval
 
-The goal: capture great content on the go (mobile, work desktop, home PC), and when you're ready, trigger execution with a single emoji — no desktop required.
+The goal: capture useful content on the go, then review implementation requests before any agent acts.
 
 ---
 
@@ -69,7 +69,7 @@ The goal: capture great content on the go (mobile, work desktop, home PC), and w
 │     → Each extraction = Forum post with topic tags            │
 │     → Auto-categorised with up to 5 tags per post             │
 │     → Filterable by tag — browse by topic                     │
-│     → React 🤖 on any prompt to queue execution              │
+│     → Authorised 🤖 reaction records a pending work intake  │
 │                                                               │
 │  Obsidian Vault                                               │
 │     → Full markdown synced across all devices                │
@@ -90,8 +90,8 @@ The goal: capture great content on the go (mobile, work desktop, home PC), and w
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/onekiller89/Co-Ord_Executor.git
-cd Co-Ord_Executor
+git clone https://github.com/onekiller89/MegaMind.git
+cd MegaMind
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -115,7 +115,10 @@ Edit `.env` with your API keys:
 | `DISCORD_OUTPUT_CHANNEL_ID` | For bot | Forum channel ID (`1478880776291487785`) |
 | `YOUTUBE_API_KEY` | Optional | YouTube Data API v3 for playlist watcher |
 | `OBSIDIAN_VAULT_PATH` | Optional | Path to Obsidian vault for auto-sync |
-| `GITHUB_TOKEN` | Optional | GitHub PAT for execute queue |
+| `DISCORD_WORK_INTAKE_ENABLED` | Optional | Enables pending intake capture; defaults to `false` |
+| `DISCORD_WORK_INTAKE_REACTOR_IDS` | Optional | Comma-separated IDs authorised to capture intakes |
+| `WORK_INTAKE_ALLOWED_EXECUTORS` | Optional | Executor names allowed for later approval |
+| `WORK_INTAKE_ALLOWED_TARGETS` | Optional | Project aliases allowed for later approval |
 
 ### 3. Run
 
@@ -345,16 +348,18 @@ Server: **RussHub** (`1474002241319866439`)
 
 ---
 
-## Execution Queue
+## Controlled Work Intake
 
-When you react with 🤖 on an implementation prompt in the Forum:
+When intake is enabled and an authorised user reacts with 🤖 on a MegaMind implementation prompt in the Forum:
 
 1. MegaMind detects the reaction
 2. Extracts the prompt text from the code block
-3. Creates a GitHub Issue tagged `execute` with the full prompt and context
-4. Posts confirmation with the issue link
+3. Records a `pending_confirmation` intake with source IDs and an idempotency key
+4. Appends an audit event locally
 
-This creates a queue of actionable tasks ready for execution.
+This does not execute code, create an issue or branch, or message anyone. A separate approval records the executor, target and bounded scope. Executor handoff still requires its own reviewed implementation.
+
+Intakes are written to `data/work-intakes.json` and `data/work-intake-audit.jsonl`, which are ignored by Git. Keep their contents private.
 
 ---
 
@@ -383,7 +388,7 @@ The service auto-starts on WSL boot (user linger enabled). The dashboard auto-st
 ## Project Structure
 
 ```
-Co-Ord_Executor/
+MegaMind/
 ├── coord.py                  # CLI entry point
 ├── discord_bot.py            # MegaMind Discord bot (Forum posting, auto-tagging)
 ├── dashboard.py              # Web dashboard (knowledge graph + status)
@@ -470,7 +475,7 @@ MegaMind runs alongside **OpenClaw** (AI assistant bot) on the same Discord serv
 - [x] Obsidian vault + GitHub storage
 - [x] Central INDEX.md with status tracking
 - [x] Mobile capture (GitHub Actions)
-- [x] 🤖 reaction → GitHub Issue execute queue
+- [x] Controlled 🤖 reaction → pending local intake (disabled by default)
 - [x] API budget tracking
 - [x] Web dashboard (knowledge graph, zoom/pan, status management)
 - [x] systemd user service (`megamind.service`)

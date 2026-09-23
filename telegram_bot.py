@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Co-Ord Executor — Telegram Bot
+MegaMind — Telegram Bot
 
 Listens for URLs sent via Telegram and creates GitHub Issues
 with the 'extract' label. GitHub Actions then processes them.
@@ -24,7 +24,7 @@ load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "onekiller89/Co-Ord_Executor")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "onekiller89/MegaMind")
 ALLOWED_USERS = os.getenv("TELEGRAM_ALLOWED_USERS", "")  # Comma-separated Telegram usernames
 
 logging.basicConfig(
@@ -117,7 +117,7 @@ async def handle_message(update, context) -> None:
 async def handle_start(update, context) -> None:
     """Handle /start command."""
     await update.message.reply_text(
-        "Co-Ord Executor Bot\n\n"
+        "MegaMind Bot\n\n"
         "Send me any URL and I'll queue it for extraction:\n"
         "- YouTube videos\n"
         "- X/Twitter threads\n"

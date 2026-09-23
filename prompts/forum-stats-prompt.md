@@ -10,12 +10,12 @@ MegaMind is a Discord bot that extracts content from URLs and posts structured r
 
 ## Environment
 
-- **Bot code:** `~/Co-Ord_Executor/discord_bot.py` (discord.py bot)
+- **Bot code:** `~/MegaMind/discord_bot.py` (discord.py bot)
 - **Bot runs as:** `systemctl --user restart megamind.service`
 - **Forum channel ID:** `1478880776291487785`
-- **Bot token:** stored in `~/Co-Ord_Executor/.env` as `DISCORD_BOT_TOKEN`
-- **Local index:** `~/Co-Ord_Executor/extractions/INDEX.md` (catalogue of all extractions)
-- **Dashboard:** Dash app on port 8050 (in `~/Co-Ord_Executor/dashboard.py`)
+- **Bot token:** stored in `~/MegaMind/.env` as `DISCORD_BOT_TOKEN`
+- **Local index:** `~/MegaMind/extractions/INDEX.md` (catalogue of all extractions)
+- **Dashboard:** Dash app on port 8050 (in `~/MegaMind/dashboard.py`)
 
 ## Forum Tags (13 topic tags with emoji)
 ```
@@ -60,7 +60,7 @@ The current `/search` command searches the local JSON index file, not the actual
 - Test by running `/stats` and `/search test` in Discord
 
 ## Key Files to Read First
-- `~/Co-Ord_Executor/discord_bot.py` — all bot code lives here
-- `~/Co-Ord_Executor/budget.py` — budget tracking module
-- `~/Co-Ord_Executor/outputs/index.py` — local extraction index
-- `~/Co-Ord_Executor/.env` — environment config
+- `~/MegaMind/discord_bot.py` — all bot code lives here
+- `~/MegaMind/budget.py` — budget tracking module
+- `~/MegaMind/outputs/index.py` — local extraction index
+- `~/MegaMind/.env` — environment config

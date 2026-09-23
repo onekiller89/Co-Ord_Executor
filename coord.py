@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Co-Ord Executor — Extract, structure, and track valuable content.
+MegaMind — Extract, structure, and track valuable content.
 
 Usage:
     python coord.py <URL>                  Extract content from a URL
@@ -63,7 +63,7 @@ def run_pipeline(url: str) -> dict:
 
 def extract_url(url: str) -> None:
     """CLI extraction pipeline for a given URL."""
-    print(f"\n  Co-Ord Executor")
+    print(f"\n  MegaMind")
     print(f"  {'='*40}")
     print(f"  Extracting: {url}")
 
@@ -94,7 +94,7 @@ def paste_content(source_type_str: str) -> None:
         print(f"Valid types: {', '.join(type_map.keys())}")
         sys.exit(1)
 
-    print(f"\n  Co-Ord Executor — Manual Paste Mode")
+    print(f"\n  MegaMind — Manual Paste Mode")
     print(f"  {'='*40}")
     print(f"  Source type: {source_type.value}")
 
@@ -149,7 +149,7 @@ def paste_content(source_type_str: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Co-Ord Executor — Extract, structure, and track valuable content.",
+        description="MegaMind — Extract, structure, and track valuable content.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""\
 Examples:

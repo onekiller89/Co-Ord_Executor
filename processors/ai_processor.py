@@ -1,6 +1,7 @@
 """AI-powered content processor using Claude API for insight extraction."""
 
 import time
+import re
 
 import anthropic
 
@@ -80,6 +81,16 @@ Be practical. The reader will pick this up later on their desktop to implement. 
 Make everything as copy-paste-ready as possible."""
 
 
+REQUIRED_SECTIONS = (
+    "Summary",
+    "Key Insights",
+    "Actions",
+    "Implementation Prompts",
+    "Tags",
+    "Category",
+)
+
+
 def process_extraction(result: ExtractionResult) -> str:
     """Process an extraction result through Claude to generate structured output.
 
@@ -118,6 +129,36 @@ Analyse this content and produce the structured output as specified."""
                 continue
             raise
 
+    processed_text = response.content[0].text
+    missing_sections = _missing_required_sections(processed_text)
+    # Long extractions occasionally reach the response limit after producing all of
+    # the substantive analysis but before the final taxonomy fields.  Complete
+    # only those fields rather than discarding an otherwise useful extraction.
+    if missing_sections and set(missing_sections).issubset({"Tags", "Category"}):
+        completion_prompt = f"""The following MegaMind extraction is complete except for the required section(s): {', '.join(missing_sections)}.
+
+Return ONLY the missing Markdown section(s), using these exact headings:
+{chr(10).join(f'### {section}' for section in missing_sections)}
+
+For Tags, suggest 3-6 lowercase hashtag tags. For Category, give one precise category name.
+
+Extraction to classify:
+---
+{processed_text}
+---"""
+        completion = client.messages.create(
+            model=config.CLAUDE_MODEL,
+            max_tokens=500,
+            messages=[{"role": "user", "content": completion_prompt}],
+        )
+        processed_text = f"{processed_text.rstrip()}\n\n{completion.content[0].text.strip()}"
+        missing_sections = _missing_required_sections(processed_text)
+    if missing_sections:
+        raise RuntimeError(
+            "AI processing response missing required section(s): "
+            + ", ".join(missing_sections)
+        )
+
     # Track token usage for budget
     try:
         from budget import record_usage
@@ -131,7 +172,17 @@ Analyse this content and produce the structured output as specified."""
     except Exception:
         pass  # Don't let budget tracking break extraction
 
-    return response.content[0].text
+    return processed_text
+
+
+def _missing_required_sections(text: str) -> list[str]:
+    """Return required MegaMind sections missing from AI output."""
+    missing = []
+    for section in REQUIRED_SECTIONS:
+        pattern = rf"^###\s+{re.escape(section)}\s*$"
+        if not re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE):
+            missing.append(section)
+    return missing
 
 
 def _fallback_processing(result: ExtractionResult) -> str:

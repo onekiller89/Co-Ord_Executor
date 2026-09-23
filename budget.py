@@ -1,4 +1,4 @@
-"""API usage and budget tracking for Co-Ord Executor.
+"""API usage and budget tracking for MegaMind.
 
 Tracks token usage, estimated costs, and provides budget summaries.
 Data is persisted to a JSON file for cross-session tracking.
@@ -18,7 +18,6 @@ BUDGET_FILE = config.PROJECT_ROOT / "api_budget.json"
 # ── Pricing (USD per 1M tokens) — updated Feb 2025 ──
 # https://docs.anthropic.com/en/docs/about-claude/pricing
 PRICING = {
-    "claude-sonnet-4-20250514": {"input": 3.00, "output": 15.00},
     "claude-sonnet-4-6":       {"input": 3.00, "output": 15.00},
     "claude-opus-4-6":         {"input": 15.00, "output": 75.00},
     "claude-haiku-4-5":        {"input": 0.80, "output": 4.00},
@@ -69,7 +68,7 @@ def record_usage(
     """Record an API call's token usage and return the updated budget summary.
 
     Args:
-        model: Model name (e.g. "claude-sonnet-4-20250514")
+        model: Model name (e.g. "claude-sonnet-4-6")
         input_tokens: Number of input tokens used
         output_tokens: Number of output tokens used
         api: Which API ("anthropic" or "grok")

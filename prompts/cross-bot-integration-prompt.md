@@ -9,7 +9,7 @@ Paste this into a fresh Claude Code session at `\\wsl.localhost\Ubuntu\`.
 I have two Discord bots running on the same server (RussHub):
 
 1. **OpenClaw** — AI assistant bot (Node.js, runs as systemd service). Handles chat, skills (email, GitHub, Obsidian, weather, etc.), model switching, bash execution. Configured via `~/.openclaw/openclaw.json`.
-2. **MegaMind** — Content extraction bot (Python/discord.py, runs as systemd service at `~/Co-Ord_Executor/`). Extracts content from URLs, posts to Discord Forum channel with auto-tagging.
+2. **MegaMind** — Content extraction bot (Python/discord.py, runs as systemd service at `~/MegaMind/`). Extracts content from URLs, posts to Discord Forum channel with auto-tagging.
 
 Currently they're independent. I want them to be aware of each other and able to trigger actions cross-bot.
 
@@ -21,11 +21,11 @@ Currently they're independent. I want them to be aware of each other and able to
   - Skills dir: `~/.openclaw/workspace-main/skills/` & bundled `~/.openclaw/skills/`
   - 24 eligible skills including email, GitHub, Notion, Obsidian, etc.
   - Discord channels: #general, #ai-control, #testing, #reports, etc.
-- **MegaMind:** `~/Co-Ord_Executor/discord_bot.py`, service: `megamind.service`
+- **MegaMind:** `~/MegaMind/discord_bot.py`, service: `megamind.service`
   - Dashboard: `http://localhost:8050`
   - Discord channels: #extract (input), #output (Forum, output)
-  - Budget tracking in `~/Co-Ord_Executor/budget.py`
-  - Extraction index in `~/Co-Ord_Executor/extractions/INDEX.md`
+  - Budget tracking in `~/MegaMind/budget.py`
+  - Extraction index in `~/MegaMind/extractions/INDEX.md`
 
 ## Integration Ideas
 
@@ -85,6 +85,6 @@ Start with the highest-value integration first:
 2. **Shared search** — let OpenClaw query MegaMind's extraction index
 3. **Status awareness** — each bot knows if the other is online
 
-Read the existing OpenClaw skill format first: `ls ~/.openclaw/workspace-main/skills/` and read a few examples to understand the pattern. Then read `~/Co-Ord_Executor/discord_bot.py` to understand MegaMind's architecture.
+Read the existing OpenClaw skill format first: `ls ~/.openclaw/workspace-main/skills/` and read a few examples to understand the pattern. Then read `~/MegaMind/discord_bot.py` to understand MegaMind's architecture.
 
 Build iteratively — get one integration working end-to-end before adding more.

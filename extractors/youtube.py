@@ -1,14 +1,20 @@
-"""YouTube video extraction via Grok API or manual paste."""
+"""YouTube video extraction via transcript API, Grok API, or manual paste."""
 
+import html
+import logging
 import re
 import sys
+import tempfile
 import urllib.request
 import json
+from pathlib import Path
 from openai import OpenAI
 
 import config
 from extractors.base import BaseExtractor, ExtractionResult
 from extractors.detector import extract_video_id
+
+log = logging.getLogger("megamind.youtube")
 
 
 GROK_SYSTEM_PROMPT = """You are extracting content from a YouTube video. Given the video URL, provide a comprehensive extraction including:
@@ -26,16 +32,38 @@ Be thorough - capture everything valuable. Format as structured text, not markdo
 
 
 class YouTubeExtractor(BaseExtractor):
-    """Extract YouTube video content via Grok or manual paste."""
+    """Extract YouTube video content via captions, Grok, or manual paste."""
 
     def extract(self, url: str) -> ExtractionResult:
         video_id = extract_video_id(url)
         canonical_url = f"https://www.youtube.com/watch?v={video_id}" if video_id else url
         thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg" if video_id else ""
+        snippet = _fetch_youtube_snippet(canonical_url)
 
-        # Try Grok API first
+        # Try real YouTube captions first. Grok is a fallback, not a transcript source.
+        if video_id:
+            try:
+                return self._extract_via_transcript_api(
+                    canonical_url, video_id, thumbnail_url, snippet,
+                )
+            except Exception as exc:
+                log.warning("YouTube transcript extraction failed for %s: %s", canonical_url, exc)
+            try:
+                return self._extract_via_ytdlp(
+                    canonical_url, video_id, thumbnail_url, snippet,
+                )
+            except Exception as exc:
+                log.warning("yt-dlp subtitle extraction failed for %s: %s", canonical_url, exc)
+
+        # Try Grok API if captions are unavailable.
         if config.XAI_API_KEY:
-            return self._extract_via_grok(canonical_url, thumbnail_url)
+            result = self._extract_via_grok(canonical_url, thumbnail_url, snippet)
+            if _looks_like_real_video_content(result.raw_content):
+                return result
+            raise RuntimeError(
+                "Grok did not return usable YouTube content. "
+                "The extractor needs captions or a real transcript, not an access-limit message."
+            )
 
         # In CI mode, can't prompt for input
         if config.CI_MODE:
@@ -47,7 +75,128 @@ class YouTubeExtractor(BaseExtractor):
         # Fall back to manual paste
         return self._extract_via_paste(canonical_url, thumbnail_url)
 
-    def _extract_via_grok(self, url: str, thumbnail_url: str = "") -> ExtractionResult:
+    def _extract_via_transcript_api(
+        self,
+        url: str,
+        video_id: str,
+        thumbnail_url: str = "",
+        snippet: dict | None = None,
+    ) -> ExtractionResult:
+        """Use YouTube captions as the raw extraction source."""
+        from youtube_transcript_api import YouTubeTranscriptApi
+
+        transcript = YouTubeTranscriptApi().fetch(
+            video_id,
+            languages=("en", "en-US", "en-GB", "en-AU"),
+            preserve_formatting=False,
+        )
+        rows = transcript.to_raw_data()
+        transcript_text = _format_transcript(rows)
+        if len(transcript_text) < 500:
+            raise RuntimeError("Transcript was too short to analyse reliably")
+
+        snippet = snippet or {}
+        title = snippet.get("title") or _extract_title("", url)
+        channel = snippet.get("channelTitle", "Unknown")
+        published_at = snippet.get("publishedAt", "")
+
+        raw_content = "\n".join(
+            part for part in [
+                f"Video Title: {title}",
+                f"Channel: {channel}",
+                f"Published: {published_at}" if published_at else "",
+                f"URL: {url}",
+                "Transcript source: YouTube captions",
+                "",
+                "Transcript:",
+                transcript_text,
+            ]
+            if part != ""
+        )
+
+        return ExtractionResult(
+            title=title,
+            url=url,
+            source_type="YouTube",
+            raw_content=raw_content,
+            metadata={
+                "extraction_method": "youtube_transcript_api",
+                "thumbnail": thumbnail_url,
+                "channel": channel,
+            },
+        )
+
+    def _extract_via_ytdlp(
+        self,
+        url: str,
+        video_id: str,
+        thumbnail_url: str = "",
+        snippet: dict | None = None,
+    ) -> ExtractionResult:
+        """Use yt-dlp subtitle download as a fallback transcript source."""
+        from yt_dlp import YoutubeDL
+
+        with tempfile.TemporaryDirectory(prefix="megamind-youtube-") as tmpdir:
+            outtmpl = str(Path(tmpdir) / "%(id)s.%(ext)s")
+            options = {
+                "skip_download": True,
+                "writesubtitles": True,
+                "writeautomaticsub": True,
+                "subtitleslangs": ["en.*", "en"],
+                "subtitlesformat": "vtt",
+                "outtmpl": outtmpl,
+                "quiet": True,
+                "no_warnings": True,
+            }
+            with YoutubeDL(options) as ydl:
+                info = ydl.extract_info(url, download=True) or {}
+
+            vtt_files = sorted(Path(tmpdir).glob(f"{video_id}*.vtt"))
+            if not vtt_files:
+                raise RuntimeError("No English subtitle file downloaded")
+
+            preferred = next((path for path in vtt_files if ".en-orig." in path.name), vtt_files[0])
+            transcript_text = _parse_vtt_transcript(preferred.read_text(encoding="utf-8"))
+            if len(transcript_text) < 500:
+                raise RuntimeError("yt-dlp transcript was too short to analyse reliably")
+
+        snippet = snippet or {}
+        title = snippet.get("title") or info.get("title") or _extract_title("", url)
+        channel = snippet.get("channelTitle") or info.get("channel") or info.get("uploader") or "Unknown"
+        published_at = snippet.get("publishedAt") or info.get("upload_date", "")
+
+        raw_content = "\n".join(
+            part for part in [
+                f"Video Title: {title}",
+                f"Channel: {channel}",
+                f"Published: {published_at}" if published_at else "",
+                f"URL: {url}",
+                "Transcript source: yt-dlp subtitles",
+                "",
+                "Transcript:",
+                transcript_text,
+            ]
+            if part != ""
+        )
+
+        return ExtractionResult(
+            title=title,
+            url=url,
+            source_type="YouTube",
+            raw_content=raw_content,
+            metadata={
+                "extraction_method": "yt_dlp_subtitles",
+                "thumbnail": thumbnail_url,
+                "channel": channel,
+            },
+        )
+
+    def _extract_via_grok(
+        self,
+        url: str,
+        thumbnail_url: str = "",
+        snippet: dict | None = None,
+    ) -> ExtractionResult:
         """Use Grok API to extract video content."""
         client = OpenAI(
             api_key=config.XAI_API_KEY,
@@ -78,7 +227,7 @@ class YouTubeExtractor(BaseExtractor):
         except Exception:
             pass
 
-        title = _extract_title(content, url)
+        title = (snippet or {}).get("title") or _extract_title(content, url)
 
         return ExtractionResult(
             title=title,
@@ -194,3 +343,139 @@ def _extract_title(content: str, url: str) -> str:
             return line[:200]
 
     return "Untitled Video"
+
+
+def _fetch_youtube_snippet(url: str) -> dict:
+    """Fetch basic YouTube metadata when the Data API key is configured."""
+    video_id = extract_video_id(url)
+    if not video_id or not config.YOUTUBE_API_KEY:
+        return {}
+
+    try:
+        api_url = (
+            "https://www.googleapis.com/youtube/v3/videos"
+            f"?id={video_id}&part=snippet&key={config.YOUTUBE_API_KEY}"
+        )
+        with urllib.request.urlopen(api_url, timeout=5) as resp:
+            data = json.loads(resp.read())
+            items = data.get("items", [])
+            if items:
+                return items[0].get("snippet", {})
+    except Exception:
+        return {}
+
+    return {}
+
+
+def _format_transcript(rows: list[dict]) -> str:
+    """Group caption rows into readable timestamped transcript paragraphs."""
+    chunks = []
+    current_lines = []
+    current_start = None
+
+    for row in rows:
+        text = html.unescape(str(row.get("text", ""))).strip()
+        text = re.sub(r"\s+", " ", text)
+        if not text:
+            continue
+
+        start = float(row.get("start", 0) or 0)
+        if current_start is None:
+            current_start = start
+
+        if current_lines and start - current_start >= 30:
+            chunks.append(f"[{_format_timestamp(current_start)}] {' '.join(current_lines)}")
+            current_lines = []
+            current_start = start
+
+        current_lines.append(text)
+
+    if current_lines and current_start is not None:
+        chunks.append(f"[{_format_timestamp(current_start)}] {' '.join(current_lines)}")
+
+    return "\n".join(chunks)
+
+
+def _format_timestamp(seconds: float) -> str:
+    """Format seconds as mm:ss or h:mm:ss."""
+    total = int(seconds)
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    if hours:
+        return f"{hours}:{minutes:02d}:{secs:02d}"
+    return f"{minutes:02d}:{secs:02d}"
+
+
+def _parse_vtt_transcript(vtt: str) -> str:
+    """Extract readable timestamped text from a WebVTT subtitle file."""
+    chunks = []
+    current_time = None
+    current_lines = []
+    last_text = None
+
+    def flush() -> None:
+        nonlocal current_time, current_lines, last_text
+        if current_time and current_lines:
+            tagged_lines = [clean for raw, clean in current_lines if "<" in raw]
+            cleaned_lines = tagged_lines or [clean for _, clean in current_lines]
+            text = " ".join(cleaned_lines).strip()
+            if text and text != last_text:
+                chunks.append(f"[{current_time}] {text}")
+                last_text = text
+        current_time = None
+        current_lines = []
+
+    for raw_line in vtt.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith(("WEBVTT", "Kind:", "Language:", "NOTE")):
+            flush()
+            continue
+
+        timestamp_match = re.match(r"^(\d{2}:)?(\d{2}:\d{2})\.\d{3}\s+-->", line)
+        if timestamp_match:
+            flush()
+            current_time = timestamp_match.group(1) or ""
+            current_time += timestamp_match.group(2)
+            continue
+
+        if line.isdigit():
+            continue
+
+        cleaned = re.sub(r"<[^>]+>", "", line)
+        cleaned = html.unescape(cleaned)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        if not cleaned:
+            continue
+        current_lines.append((line, cleaned))
+
+    flush()
+    return "\n".join(chunks)
+
+
+def _looks_like_real_video_content(content: str) -> bool:
+    """Reject model responses that only explain they cannot access YouTube."""
+    text = content.lower()
+    blocked_phrases = (
+        "unable to access",
+        "can't access",
+        "cannot access",
+        "do not have access",
+        "don't have access",
+        "provide the transcript",
+        "paste the transcript",
+        "show transcript",
+        "i cannot watch",
+        "i can't watch",
+    )
+    if any(phrase in text for phrase in blocked_phrases):
+        return False
+
+    useful_markers = (
+        "summary",
+        "key point",
+        "takeaway",
+        "timestamp",
+        "channel",
+        "transcript",
+    )
+    return len(content.strip()) >= 1000 and any(marker in text for marker in useful_markers)

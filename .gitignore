@@ -11,3 +11,6 @@ build/
 client_secret.json
 youtube_token.json
 api_budget.json
+data/work-intakes.json
+data/work-intake-audit.jsonl
+*:Zone.Identifier

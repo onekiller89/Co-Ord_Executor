@@ -48,10 +48,10 @@ I need to upgrade OpenClaw to the latest version. Last upgrade was v2026.2.22-2 
 6. **Validate DR plan** accuracy (`~/openclaw-backup/DisasterRecovery.md`) — ensure it reflects current state
 
 ### Phase 2: Also Audit MegaMind Custom Files
-Since the last upgrade, we've made significant changes to MegaMind (Co-Ord_Executor). Audit these:
-- `~/Co-Ord_Executor/discord_bot.py` — Forum channel posting, multi-tag support, requester_id flow
-- `~/Co-Ord_Executor/.env` — DISCORD_OUTPUT_CHANNEL_ID changed to Forum channel 1478880776291487785
-- `~/Co-Ord_Executor/outputs/formatter.py` — extraction formatting
+Since the last upgrade, we've made significant changes to MegaMind (MegaMind). Audit these:
+- `~/MegaMind/discord_bot.py` — Forum channel posting, multi-tag support, requester_id flow
+- `~/MegaMind/.env` — DISCORD_OUTPUT_CHANNEL_ID changed to Forum channel 1478880776291487785
+- `~/MegaMind/outputs/formatter.py` — extraction formatting
 - `~/.config/systemd/user/megamind.service` — MegaMind systemd service
 - Discord Forum channel (1478880776291487785) with 13 topic tags
 - Channel topics updated with slash command references
