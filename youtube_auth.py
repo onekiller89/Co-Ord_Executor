@@ -27,7 +27,7 @@ def main():
         print(
             "ERROR: client_secret.json not found in project root.\n"
             "Download it from Google Cloud Console > APIs & Services > Credentials\n"
-            "and save it as client_secret.json in the Co-Ord_Executor folder."
+            "and save it as client_secret.json in the MegaMind folder."
         )
         sys.exit(1)
 

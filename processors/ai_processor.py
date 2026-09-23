@@ -1,5 +1,8 @@
 """AI-powered content processor using Claude API for insight extraction."""
 
+import time
+import re
+
 import anthropic
 
 import config
@@ -30,15 +33,21 @@ Use "- [ ]" checkbox format.
 ### Implementation Prompts
 Ready-to-use prompts that can be pasted directly into an AI assistant (like Claude Code) \
 to implement the actions above. Each prompt should be specific, self-contained, and \
-produce a useful result. Number each prompt clearly as:
+produce a useful result. Aim for 4-8 prompts covering the key implementation steps.
+
+Number each prompt clearly with a context summary explaining why it matters:
 
 #### Prompt 1: [Short descriptive title]
-> [The actual prompt text here]
+*[1-2 sentence summary: what this achieves and why it's valuable]*
+> [The actual detailed prompt text here — specific, self-contained, copy-paste ready. \
+Include relevant technical details, framework versions, file paths, and expected outcomes.]
 
 #### Prompt 2: [Short descriptive title]
-> [The actual prompt text here]
+*[1-2 sentence summary: what this achieves and why it's valuable]*
+> [The actual detailed prompt text here]
 
-Continue numbering for all prompts.
+Continue numbering for all prompts. Make each prompt detailed enough to produce a \
+complete, working result without additional context.
 
 ### Links & Resources
 All URLs, tools, libraries, repos, and resources mentioned or referenced. \
@@ -72,6 +81,16 @@ Be practical. The reader will pick this up later on their desktop to implement. 
 Make everything as copy-paste-ready as possible."""
 
 
+REQUIRED_SECTIONS = (
+    "Summary",
+    "Key Insights",
+    "Actions",
+    "Implementation Prompts",
+    "Tags",
+    "Category",
+)
+
+
 def process_extraction(result: ExtractionResult) -> str:
     """Process an extraction result through Claude to generate structured output.
 
@@ -93,12 +112,52 @@ Title: {result.title}
 
 Analyse this content and produce the structured output as specified."""
 
-    response = client.messages.create(
-        model=config.CLAUDE_MODEL,
-        max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
-    )
+    max_retries = 4
+    for attempt in range(max_retries + 1):
+        try:
+            response = client.messages.create(
+                model=config.CLAUDE_MODEL,
+                max_tokens=4096,
+                system=SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_message}],
+            )
+            break
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < max_retries:
+                wait = 2 ** (attempt + 1)  # 2s, 4s, 8s, 16s
+                time.sleep(wait)
+                continue
+            raise
+
+    processed_text = response.content[0].text
+    missing_sections = _missing_required_sections(processed_text)
+    # Long extractions occasionally reach the response limit after producing all of
+    # the substantive analysis but before the final taxonomy fields.  Complete
+    # only those fields rather than discarding an otherwise useful extraction.
+    if missing_sections and set(missing_sections).issubset({"Tags", "Category"}):
+        completion_prompt = f"""The following MegaMind extraction is complete except for the required section(s): {', '.join(missing_sections)}.
+
+Return ONLY the missing Markdown section(s), using these exact headings:
+{chr(10).join(f'### {section}' for section in missing_sections)}
+
+For Tags, suggest 3-6 lowercase hashtag tags. For Category, give one precise category name.
+
+Extraction to classify:
+---
+{processed_text}
+---"""
+        completion = client.messages.create(
+            model=config.CLAUDE_MODEL,
+            max_tokens=500,
+            messages=[{"role": "user", "content": completion_prompt}],
+        )
+        processed_text = f"{processed_text.rstrip()}\n\n{completion.content[0].text.strip()}"
+        missing_sections = _missing_required_sections(processed_text)
+    if missing_sections:
+        raise RuntimeError(
+            "AI processing response missing required section(s): "
+            + ", ".join(missing_sections)
+        )
 
     # Track token usage for budget
     try:
@@ -113,7 +172,17 @@ Analyse this content and produce the structured output as specified."""
     except Exception:
         pass  # Don't let budget tracking break extraction
 
-    return response.content[0].text
+    return processed_text
+
+
+def _missing_required_sections(text: str) -> list[str]:
+    """Return required MegaMind sections missing from AI output."""
+    missing = []
+    for section in REQUIRED_SECTIONS:
+        pattern = rf"^###\s+{re.escape(section)}\s*$"
+        if not re.search(pattern, text, flags=re.IGNORECASE | re.MULTILINE):
+            missing.append(section)
+    return missing
 
 
 def _fallback_processing(result: ExtractionResult) -> str:

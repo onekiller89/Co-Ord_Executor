@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-MegaMind — Discord bot for Co-Ord Executor.
+MegaMind — Discord bot for MegaMind.
 
 Watches #extract for URLs, processes them through the extraction pipeline,
 and posts structured output to #output. Also integrates with the YouTube
@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import subprocess
+import threading
 import sys
 
 import discord
@@ -24,6 +25,7 @@ from discord.ext import tasks
 import config
 from coord import run_pipeline
 from outputs.formatter import parse_sections, parse_prompts, extract_category_from_content
+from work_intake import IntakePolicy, WorkIntakeStore
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,10 +56,68 @@ CATEGORY_COLOURS = {
 }
 DEFAULT_COLOUR = 0x5865F2  # discord blurple
 
+# ── Forum tag IDs (from the #output Forum channel) ──
+FORUM_TAG_MAP = {
+    "AI Agents": "1478894185091301459",
+    "AI Tools": "1478894185091301460",
+    "AI Strategy": "1478894185091301461",
+    "Prompting": "1478894185091301462",
+    "Automation": "1478894185091301463",
+    "Productivity": "1478894185091301464",
+    "Development": "1478894185091301465",
+    "DevOps": "1478894185099821087",
+    "Content Creation": "1478894185099821088",
+    "Data Science": "1478894185099821089",
+    "Security": "1478894185099821090",
+    "Fitness": "1478894185099821091",
+    "Finance": "1478894185099821092",
+}
+
+# Map AI-returned categories → forum tag names (supports multi-tag via list)
+CATEGORY_TO_FORUM_TAGS = {
+    "ai development": ["AI Tools"],
+    "ai image generation": ["AI Tools", "Content Creation"],
+    "ai saas development": ["AI Tools", "AI Strategy"],
+    "ai product strategy": ["AI Strategy"],
+    "ai agents": ["AI Agents"],
+    "ai": ["AI Tools"],
+    "machine learning": ["AI Tools", "Data Science"],
+    "claude code": ["AI Tools"],
+    "prompt engineering": ["Prompting", "AI Strategy"],
+    "computer vision": ["Data Science", "AI Tools"],
+    "data analysis": ["Data Science"],
+    "data science": ["Data Science"],
+    "python development": ["Development"],
+    "python programming": ["Development"],
+    "python": ["Development"],
+    "development": ["Development"],
+    "web development": ["Development"],
+    "game development": ["Development"],
+    "devops": ["DevOps"],
+    "infrastructure as code": ["DevOps"],
+    "automation": ["Automation"],
+    "content creation": ["Content Creation"],
+    "productivity": ["Productivity"],
+    "security": ["Security"],
+    "fitness": ["Fitness"],
+    "finance": ["Finance"],
+    "budgeting": ["Finance"],
+    "finances": ["Finance"],
+    "open source": ["AI Tools"],
+    "mindfulness": ["Fitness"],
+    "other": ["AI Tools"],
+}
+
 
 def get_category_colour(category: str) -> int:
     """Return a Discord embed colour based on category."""
     return CATEGORY_COLOURS.get(category.lower(), DEFAULT_COLOUR)
+
+
+def resolve_forum_tags(category: str) -> list[str]:
+    """Map an AI category to a list of forum tag IDs."""
+    tag_names = CATEGORY_TO_FORUM_TAGS.get(category.lower(), ["AI Tools"])
+    return [FORUM_TAG_MAP[n] for n in tag_names if n in FORUM_TAG_MAP]
 
 
 class MegaMind(discord.Client):
@@ -72,6 +132,9 @@ class MegaMind(discord.Client):
         self.tree = app_commands.CommandTree(self)
         self.extraction_count = 0
         self._processing_urls: set[str] = set()  # prevent duplicate processing
+        self.work_intakes = WorkIntakeStore(
+            config.WORK_INTAKE_RECORDS_PATH, config.WORK_INTAKE_AUDIT_PATH
+        )
 
     async def setup_hook(self):
         """Register slash commands and start background tasks."""
@@ -91,7 +154,7 @@ class MegaMind(discord.Client):
         async def extract_command(interaction: discord.Interaction, url: str):
             await interaction.response.defer(thinking=True)
             try:
-                result = await self._process_url(url, source="slash_command")
+                result = await self._process_url(url, source="slash_command", requester_id=interaction.user.id)
                 await interaction.followup.send(
                     f"Extraction complete: **{result['title']}** — check <#{config.DISCORD_OUTPUT_CHANNEL_ID}>"
                 )
@@ -189,8 +252,8 @@ class MegaMind(discord.Client):
 
     async def on_message(self, message: discord.Message):
         """Watch #extract channel for URLs."""
-        # Ignore own messages
-        if message.author == self.user:
+        # Ignore bot messages, including our own playlist audit trail.
+        if message.author == self.user or message.author.bot:
             return
 
         # Only process messages in #extract
@@ -214,7 +277,7 @@ class MegaMind(discord.Client):
                 continue
             try:
                 self._processing_urls.add(url)
-                result = await self._process_url(url, source="discord_extract")
+                result = await self._process_url(url, source="discord_extract", requester_id=message.author.id)
                 # React with checkmark on success
                 try:
                     await message.add_reaction("\u2705")
@@ -231,11 +294,13 @@ class MegaMind(discord.Client):
                 self._processing_urls.discard(url)
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
-        """Handle robot emoji reaction on prompt messages to queue execution."""
+        """Capture an authorised robot reaction as a pending work intake."""
         if payload.user_id == self.user.id:
             return
 
-        if str(payload.emoji) != "\U0001F916":  # robot emoji
+        if not config.DISCORD_WORK_INTAKE_ENABLED or str(payload.emoji) != "🤖":
+            return
+        if payload.user_id not in config.DISCORD_WORK_INTAKE_REACTOR_IDS:
             return
 
         # Prompts live in threads parented to #output, or directly in #output
@@ -257,6 +322,9 @@ class MegaMind(discord.Client):
         except discord.HTTPException:
             return
 
+        if message.author.id != self.user.id:
+            return
+
         # Check if the message contains a code block (prompt)
         code_blocks = re.findall(r"```(?:\w*\n)?(.*?)```", message.content, re.DOTALL)
         if not code_blocks:
@@ -266,10 +334,29 @@ class MegaMind(discord.Client):
         if not prompt_text:
             return
 
-        # Create a GitHub Issue to queue for execution
-        await self._create_execute_issue(prompt_text, message, payload)
+        policy = IntakePolicy(
+            allowed_reactor_ids=config.DISCORD_WORK_INTAKE_REACTOR_IDS,
+            allowed_executors=config.WORK_INTAKE_ALLOWED_EXECUTORS,
+            allowed_targets=config.WORK_INTAKE_ALLOWED_TARGETS,
+        )
+        source = {
+            "guild_id": payload.guild_id,
+            "channel_id": payload.channel_id,
+            "message_id": payload.message_id,
+            "message_url": message.jump_url,
+            "message_author_id": message.author.id,
+        }
+        reaction = {"user_id": payload.user_id, "emoji": str(payload.emoji)}
+        try:
+            record, created = self.work_intakes.capture(prompt_text, source, reaction, policy)
+            log.info(
+                "Work intake %s: %s (%s)",
+                "captured" if created else "already recorded", record["id"], record["status"]
+            )
+        except (PermissionError, ValueError) as exc:
+            log.warning("Rejected work intake reaction: %s", exc)
 
-    async def _process_url(self, url: str, source: str = "unknown") -> dict:
+    async def _process_url(self, url: str, source: str = "unknown", requester_id: int | None = None) -> dict:
         """Run the extraction pipeline on a URL and post results to #output."""
         log.info(f"Processing URL: {url} (source: {source})")
 
@@ -281,19 +368,20 @@ class MegaMind(discord.Client):
         log.info(f"Extraction complete: {result['title']} [{result['source_type']}]")
 
         # Post to #output
-        await self._post_output(result)
+        await self._post_output(result, requester_id=requester_id)
 
         # Git commit + push
         await self._git_commit(result)
 
         return result
 
-    async def _post_output(self, result: dict):
-        """Post structured extraction output to #output channel.
+    async def _post_output(self, result: dict, requester_id: int | None = None):
+        """Post structured extraction as a Forum post in the #output Forum channel.
 
-        Creates a header embed in #output, then a thread with full details.
+        Creates a tagged forum thread with the header embed as the opening message,
+        then sends detail sections (summary, insights, prompts, etc.) as replies.
         """
-        # Fetch channel — try cache first, then API fetch as fallback
+        # Fetch forum channel
         channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
         if not channel:
             try:
@@ -307,13 +395,28 @@ class MegaMind(discord.Client):
         category = extract_category_from_content(processed)
         tags_text = sections.get("Tags", "")
 
+        # ── Resolve forum tags (supports multi-tag) ──
+        tag_ids = resolve_forum_tags(category)
+        applied_tags = []
+        if tag_ids and isinstance(channel, discord.ForumChannel):
+            tag_id_set = set(tag_ids)
+            for tag in channel.available_tags:
+                if str(tag.id) in tag_id_set:
+                    applied_tags.append(tag)
+            # Discord allows max 5 applied tags per post
+            applied_tags = applied_tags[:5]
+
         # ── Build the header embed ──
         summary_preview = sections.get("Summary", "")
         if summary_preview and len(summary_preview) > 200:
             summary_preview = summary_preview[:200] + "..."
 
+        embed_title = result["title"]
+        if len(embed_title) > 250:
+            embed_title = embed_title[:247] + "..."
+
         embed = discord.Embed(
-            title=result["title"],
+            title=embed_title,
             url=result["url"],
             description=summary_preview,
             colour=get_category_colour(category),
@@ -329,27 +432,47 @@ class MegaMind(discord.Client):
 
         embed.set_footer(text=f"MegaMind | {result['date']} | {result['filename']}")
 
-        # ── Post header embed and create thread ──
-        thread = None
-        header_msg = await channel.send(embed=embed)
+        # ── Create forum post (thread) ──
         thread_name = result["title"][:100]
-        try:
-            thread = await header_msg.create_thread(
-                name=thread_name,
-                auto_archive_duration=10080,  # 7 days
-            )
-        except discord.Forbidden:
-            log.error("Bot lacks CREATE_PUBLIC_THREADS permission on #output")
-        except discord.HTTPException as e:
-            log.error(f"Failed to create thread: {e}")
+        thread = None
+
+        if isinstance(channel, discord.ForumChannel):
+            try:
+                thread_with_msg = await channel.create_thread(
+                    name=thread_name,
+                    embed=embed,
+                    applied_tags=applied_tags,
+                    auto_archive_duration=10080,
+                )
+                thread = thread_with_msg.thread
+            except discord.Forbidden:
+                log.error("Bot lacks permission to create forum posts")
+            except discord.HTTPException as e:
+                log.error(f"Failed to create forum post: {e}")
+        else:
+            # Fallback for non-forum channels (shouldn't happen, but safe)
+            header_msg = await channel.send(embed=embed)
+            try:
+                thread = await header_msg.create_thread(
+                    name=thread_name, auto_archive_duration=10080,
+                )
+            except discord.HTTPException as e:
+                log.error(f"Failed to create thread: {e}")
 
         if not thread:
             return
 
-        # ── All detail messages go inside the thread ──
+        # ── Add the requester to the thread ──
+        if requester_id:
+            try:
+                await thread.add_user(discord.Object(id=requester_id))
+            except discord.HTTPException:
+                pass
+
+        # ── Detail messages inside the thread ──
         await self._send_thread_details(thread, sections)
 
-        # ── Budget footer — show cost of this extraction ──
+        # ── Budget footer ──
         try:
             budget = _load_budget()
             if budget and budget["history"]:
@@ -373,45 +496,62 @@ class MegaMind(discord.Client):
         insights = sections.get("Key Insights", "")
         if insights:
             text = f"**Key Insights**\n{insights}"
-            if len(text) > 1900:
-                text = text[:1900] + "\n..."
-            await thread.send(text)
+            for chunk in _split_message(text):
+                await thread.send(chunk)
 
         # 3. Actions
         actions = sections.get("Actions", "")
         if actions:
             text = f"**Actions**\n{actions}"
-            if len(text) > 1900:
-                text = text[:1900] + "\n..."
-            await thread.send(text)
+            for chunk in _split_message(text):
+                await thread.send(chunk)
 
-        # 4. Individual prompts — each in its own message with code block
+        # 4. Implementation prompts header
         prompts_section = sections.get("Implementation Prompts", "")
         if prompts_section:
             prompts = parse_prompts(prompts_section)
-            for prompt in prompts:
-                prompt_msg = f"**{prompt['title']}**\n```\n{prompt['body']}\n```"
+            if prompts:
+                await thread.send(
+                    f"**Implementation Prompts** — {len(prompts)} step(s)\n"
+                    f"-# React with \U0001F916 on any prompt to queue it for execution"
+                )
+
+            # 5. Individual prompts — each in its own message
+            for i, prompt in enumerate(prompts, 1):
+                parts = [f"**{i}. {prompt['title']}**"]
+
+                # Context summary above the code block
+                if prompt.get("context"):
+                    parts.append(f"_{prompt['context']}_")
+
+                # Prompt body in a code block
+                if prompt.get("body"):
+                    parts.append(f"```\n{prompt['body']}\n```")
+
+                prompt_msg = "\n".join(parts)
                 if len(prompt_msg) > 1900:
-                    prompt_msg = prompt_msg[:1900] + "\n```"
+                    prompt_msg = prompt_msg[:1897] + "\n```"
                 msg = await thread.send(prompt_msg)
                 try:
                     await msg.add_reaction("\U0001F916")
                 except discord.HTTPException:
                     pass
 
-        # 5. Links & Resources
+        # 6. Links & Resources
         links = sections.get("Links & Resources", "")
         if links:
             text = f"**Links & Resources**\n{links}"
-            if len(text) > 1900:
-                text = text[:1900] + "\n..."
-            await thread.send(text)
+            for chunk in _split_message(text):
+                await thread.send(chunk)
 
     async def _post_error(self, url: str, error_msg: str):
-        """Post a failure message to #output."""
+        """Post a failure message to #output Forum channel."""
         channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
         if not channel:
-            return
+            try:
+                channel = await self.fetch_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
+            except discord.HTTPException:
+                return
 
         embed = discord.Embed(
             title="Extraction Failed",
@@ -420,57 +560,18 @@ class MegaMind(discord.Client):
         embed.add_field(name="URL", value=url, inline=False)
         embed.add_field(name="Error", value=error_msg[:1000], inline=False)
         embed.set_footer(text="Retry by posting the URL again in #extract, or use /extract <url>")
-        await channel.send(embed=embed)
 
-    async def _create_execute_issue(self, prompt_text: str, message: discord.Message, payload):
-        """Create a GitHub Issue tagged 'execute' with the selected prompt."""
-        if not config.GITHUB_TOKEN:
-            log.warning("GITHUB_TOKEN not set — cannot create execute issue")
-            return
-
-        import requests
-
-        headers = {
-            "Authorization": f"token {config.GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json",
-        }
-        issue_body = (
-            f"## Execute Prompt\n\n"
-            f"Queued via MegaMind Discord bot (robot emoji reaction).\n\n"
-            f"### Prompt\n```\n{prompt_text}\n```\n\n"
-            f"### Source\n"
-            f"- Discord message: {message.jump_url}\n"
-            f"- Queued by: <@{payload.user_id}>\n"
-        )
-
-        data = {
-            "title": f"[Execute] {prompt_text[:80]}",
-            "body": issue_body,
-            "labels": ["execute"],
-        }
-
-        loop = asyncio.get_event_loop()
-        resp = await loop.run_in_executor(
-            None,
-            lambda: requests.post(
-                f"https://api.github.com/repos/{config.GITHUB_REPO}/issues",
-                headers=headers,
-                json=data,
-            ),
-        )
-
-        if resp.status_code == 201:
-            issue_url = resp.json()["html_url"]
-            log.info(f"Created execute issue: {issue_url}")
-            # DM the user or post confirmation
-            channel = self.get_channel(config.DISCORD_OUTPUT_CHANNEL_ID)
-            if channel:
-                await channel.send(
-                    f"Queued for execution: {issue_url}\n"
-                    f"Prompt: `{prompt_text[:100]}...`"
+        if isinstance(channel, discord.ForumChannel):
+            try:
+                await channel.create_thread(
+                    name=f"Failed: {url[:90]}",
+                    embed=embed,
+                    auto_archive_duration=1440,  # 1 day
                 )
+            except discord.HTTPException as e:
+                log.error(f"Failed to post error to forum: {e}")
         else:
-            log.error(f"Failed to create issue: {resp.status_code} {resp.text}")
+            await channel.send(embed=embed)
 
     async def _git_commit(self, result: dict):
         """Commit and push new extraction files."""
@@ -501,7 +602,8 @@ class MegaMind(discord.Client):
     async def _check_youtube_playlist(self) -> int:
         """Check YouTube playlist for new videos and process them."""
         from watchers.youtube_playlist import (
-            get_new_playlist_videos, mark_video_processed, move_video_to_completed,
+            get_new_playlist_videos, mark_video_failed, mark_video_processed,
+            move_video_to_completed,
         )
 
         loop = asyncio.get_event_loop()
@@ -539,9 +641,36 @@ class MegaMind(discord.Client):
                 processed_count += 1
             except Exception as e:
                 log.error(f"Failed to process playlist video {video_url}: {e}")
+                mark_video_failed(video["video_id"], str(e))
                 await self._post_error(video_url, f"YouTube playlist extraction failed: {e}")
 
         return processed_count
+
+
+def _split_message(text: str, limit: int = 1900) -> list[str]:
+    """Split a message into chunks that fit within Discord's character limit."""
+    if len(text) <= limit:
+        return [text]
+
+    chunks = []
+    lines = text.split("\n")
+    current = []
+    current_len = 0
+
+    for line in lines:
+        line_len = len(line) + 1  # +1 for newline
+        if current_len + line_len > limit and current:
+            chunks.append("\n".join(current))
+            current = [line]
+            current_len = line_len
+        else:
+            current.append(line)
+            current_len += line_len
+
+    if current:
+        chunks.append("\n".join(current))
+
+    return chunks
 
 
 def _load_budget() -> dict | None:
@@ -554,16 +683,44 @@ def _load_budget() -> dict | None:
         return None
 
 
+_git_commit_lock = threading.Lock()
+
+
 def _git_commit_sync(result: dict):
-    """Synchronous git add + commit + push."""
-    try:
-        subprocess.run(["git", "add", "extractions/"], check=True, capture_output=True)
-        msg = f"Extract: {result['title'][:60]} [{result['source_type']}]"
-        subprocess.run(["git", "commit", "-m", msg], check=True, capture_output=True)
-        subprocess.run(["git", "push"], check=True, capture_output=True)
-        log.info(f"Git: committed and pushed {result['filename']}")
-    except subprocess.CalledProcessError as e:
-        log.warning(f"Git operation failed: {e.stderr.decode() if e.stderr else e}")
+    """Publish extraction files only when production is current with main."""
+    def git(*args: str) -> str:
+        completed = subprocess.run(
+            ["git", "-C", str(config.PROJECT_ROOT), *args],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return completed.stdout.strip()
+
+    with _git_commit_lock:
+        try:
+            branch = git("branch", "--show-current")
+            if branch != "main":
+                log.warning("Git publish paused: checkout is on %s, expected main", branch)
+                return
+
+            git("fetch", "origin", "main")
+            if git("rev-parse", "HEAD") != git("rev-parse", "origin/main"):
+                log.warning("Git publish paused: local main differs from origin/main")
+                return
+
+            git("add", "--", "extractions/")
+            if not git("diff", "--cached", "--name-only", "--", "extractions/"):
+                return
+
+            msg = f"Extract: {result['title'][:60]} [{result['source_type']}]"
+            # --only prevents another collaborator's staged code from entering
+            # the automated extraction commit.
+            git("commit", "--only", "-m", msg, "--", "extractions/")
+            git("push", "origin", "HEAD:refs/heads/main")
+            log.info("Git: committed and pushed %s", result["filename"])
+        except subprocess.CalledProcessError as exc:
+            log.warning("Git publish failed: %s", exc.stderr.strip() if exc.stderr else exc)
 
 
 def main():

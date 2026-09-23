@@ -1,0 +1,626 @@
+[
+  {
+    "file": "2026-02-25_below-is-a-comprehensive-extraction-of-content-from-the-yout.md",
+    "source_url": "https://www.youtube.com/watch?v=Bme9f5oKK3E",
+    "source_title_at_audit": "10 Claude Code Tips for Non-Developers (No Terminal Needed)",
+    "original_index_rows": [
+      {
+        "number": "2",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI Agents",
+        "tags": "`#chatgpt` `#ai-plugins` `#productivity` `#automation`",
+        "status": "Backlog"
+      },
+      {
+        "number": "3",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "DevOps",
+        "tags": "`#flask` `#deployment` `#nginx` `#gunicorn`",
+        "status": "Backlog"
+      },
+      {
+        "number": "4",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI Product Strategy",
+        "tags": "`#google-io` `#ai-integration` `#gemini-ai` `#accessibility`",
+        "status": "Backlog"
+      },
+      {
+        "number": "5",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Development",
+        "tags": "`#python` `#coding` `#best-practices` `#clean-code`",
+        "status": "Backlog"
+      },
+      {
+        "number": "6",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Development",
+        "tags": "`#chrome-extension` `#react` `#vite` `#javascript`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-02-25_video-content-extraction-for-httpswwwyoutubecomwatchvy3xzywx.md",
+    "source_url": "https://www.youtube.com/watch?v=y3xzYwxQuHc",
+    "source_title_at_audit": "Anthropic Just Dropped the Feature Everyone Asked For",
+    "original_index_rows": [
+      {
+        "number": "8",
+        "title": "Video Content Extraction for: https://www.youtube....",
+        "category": "Content Creation",
+        "tags": "`#ai-video` `#content-creation` `#tool-comparison` `#video-generation`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-02-25_video-extraction-report-for-httpswwwyoutubecomwatchvubd8qgtl.md",
+    "source_url": "https://www.youtube.com/watch?v=UbD8QGtlPjU",
+    "source_title_at_audit": "How Personal AI Agents Drive 10x Productivity (You're Doing It Wrong) - OpenClaw, Claude, and Codex",
+    "original_index_rows": [
+      {
+        "number": "7",
+        "title": "Video Extraction Report for: https://www.youtube.c...",
+        "category": "Machine Learning",
+        "tags": "`#machinelearning` `#neuralnetworks` `#python` `#fromscratch`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-02-28_below-is-a-comprehensive-extraction-of-content-from-the-yout.md",
+    "source_url": "https://www.youtube.com/watch?v=3110hx3ygp0",
+    "source_title_at_audit": "I've spent 5 BILLION tokens perfecting OpenClaw...",
+    "original_index_rows": [
+      {
+        "number": "9",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Python Programming",
+        "tags": "`#python` `#multithreading` `#multiprocessing` `#performance`",
+        "status": "Backlog"
+      },
+      {
+        "number": "10",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI Integration",
+        "tags": "`#claude` `#chatgpt` `#openrouter` `#api-integration`",
+        "status": "Backlog"
+      },
+      {
+        "number": "11",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Python Development",
+        "tags": "`#python` `#jit-compiler` `#performance` `#python3.13`",
+        "status": "Backlog"
+      },
+      {
+        "number": "12",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI Development",
+        "tags": "`#nextjs` `#openai` `#chatbot` `#ai-integration`",
+        "status": "Backlog"
+      },
+      {
+        "number": "13",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Data Analysis",
+        "tags": "`#python` `#data-analysis` `#pandas` `#visualization`",
+        "status": "Backlog"
+      },
+      {
+        "number": "16",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI-Assisted Game Development",
+        "tags": "`#ai-game-development` `#godot` `#chatgpt` `#no-code`",
+        "status": "Backlog"
+      },
+      {
+        "number": "17",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI Image Generation",
+        "tags": "`#ai-image-generation` `#stable-diffusion` `#python` `#huggingface`",
+        "status": "Backlog"
+      },
+      {
+        "number": "18",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "AI SaaS Development",
+        "tags": "`#saas` `#nextjs` `#openai` `#stripe`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-02-28_httpswwwyoutubecomwatchvdaxarhkqaxs.md",
+    "source_url": "https://www.youtube.com/watch?v=DAxARHKQAXs",
+    "source_title_at_audit": "The 4 AI Agents Non-Technical People Actually Need (And How to Use Them Today)",
+    "original_index_rows": [
+      {
+        "number": "15",
+        "title": "https://www.youtube.com/watch?v=DAxARHKQAXs",
+        "category": "Computer Vision",
+        "tags": "`#opencv` `#python` `#computer-vision` `#image-processing`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-02-28_video-content-extraction-for-httpswwwyoutubecomwatchvez4ejj0.md",
+    "source_url": "https://www.youtube.com/watch?v=EZ4EjJ0iDDQ",
+    "source_title_at_audit": "Why Your Best Employees Quit Using AI After 3 Weeks (And the 6 Skills That Would Have Saved Them)",
+    "original_index_rows": [
+      {
+        "number": "14",
+        "title": "Video Content Extraction for: https://www.youtube....",
+        "category": "Automation",
+        "tags": "`#python` `#automation` `#career` `#productivity`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-04_below-is-a-comprehensive-extraction-of-content-from-the-prov.md",
+    "source_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "source_title_at_audit": "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)",
+    "original_index_rows": [
+      {
+        "number": "21",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Digital Culture",
+        "tags": "`#internet-culture` `#viral-content` `#memes` `#digital-history`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-04_below-is-a-comprehensive-extraction-of-content-from-the-yout.md",
+    "source_url": "https://www.youtube.com/watch?v=YqREHU0pvUc",
+    "source_title_at_audit": "How I Turn Any Business Task Into a Reusable AI Skill",
+    "original_index_rows": [
+      {
+        "number": "19",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Web Development",
+        "tags": "`#django` `#python` `#webdev` `#tutorial`",
+        "status": "Backlog"
+      },
+      {
+        "number": "20",
+        "title": "Below is a comprehensive extraction of content fro...",
+        "category": "Development",
+        "tags": "`#react` `#firebase` `#fullstack` `#blog`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-05_everyone-you-know-is-about-to-try-claude-i-showed-3-people-f.md",
+    "source_url": "https://www.youtube.com/watch?v=O7SSQfiPDXA",
+    "source_title_at_audit": "Everyone You Know Is About to Try Claude (I Showed 3 People for 5 Minutes — All 3 Switched)",
+    "original_index_rows": [
+      {
+        "number": "23",
+        "title": "Everyone You Know Is About to Try Claude (I Showed...",
+        "category": "Web Development",
+        "tags": "`#css-grid` `#web-development` `#frontend` `#layout`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-06_90-of-ai-users-are-getting-mediocre-output-dont-be-one-of-th.md",
+    "source_url": "https://www.youtube.com/watch?v=KX0GurmgAoo",
+    "source_title_at_audit": "90% of AI Users Are Getting Mediocre Output. Don't Be One of Them (Stop Prompting, Do THIS Instead)",
+    "original_index_rows": [
+      {
+        "number": "26",
+        "title": "90% of AI Users Are Getting Mediocre Output. Don't...",
+        "category": "Machine Learning",
+        "tags": "`#ollama` `#google-colab` `#llm-fine-tuning` `#free-gpu`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-06_90-of-people-fail-at-vibe-coding-heres-the-actual-reason-you.md",
+    "source_url": "https://www.youtube.com/watch?v=sLz4mAyykeE",
+    "source_title_at_audit": "90% of People Fail at Vibe Coding. Here's the Actual Reason: You're Skipping the Hard Part.",
+    "original_index_rows": [
+      {
+        "number": "25",
+        "title": "90% of People Fail at Vibe Coding. Here's the Actu...",
+        "category": "Flutter Development",
+        "tags": "`#flutter` `#forms` `#rest-api` `#mobile-development`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-06_i-just-did-a-full-day-of-analyst-work-in-10-minutes-the-120k.md",
+    "source_url": "https://www.youtube.com/watch?v=U1oHRqUkI1E",
+    "source_title_at_audit": "I Just Did a Full Day of Analyst Work in 10 Minutes. The $120K Job Description Just Changed Forever.",
+    "original_index_rows": [
+      {
+        "number": "24",
+        "title": "I Just Did a Full Day of Analyst Work in 10 Minute...",
+        "category": "DevOps",
+        "tags": "`#docker` `#containerization` `#devops` `#nodejs`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-08_gpt-54-let-mickey-mouse-into-a-production-database-nobody-no.md",
+    "source_url": "https://www.youtube.com/watch?v=-_vL1KXd2rc",
+    "source_title_at_audit": "GPT-5.4 Let Mickey Mouse Into a Production Database. Nobody Noticed. (What This Means For Your Work)",
+    "original_index_rows": [
+      {
+        "number": "27",
+        "title": "GPT-5.4 Let Mickey Mouse Into a Production Databas...",
+        "category": "Development",
+        "tags": "`#python` `#logging` `#debugging` `#production`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-13_4-ai-labs-built-the-same-system-without-talking-to-each-othe.md",
+    "source_url": "https://www.youtube.com/watch?v=LO0Ws-l6brg",
+    "source_title_at_audit": "4 AI Labs Built the Same System Without Talking to Each Other (And Nobody's Discussing Why)",
+    "original_index_rows": [
+      {
+        "number": "31",
+        "title": "4 AI Labs Built the Same System Without Talking to...",
+        "category": "Next.js Development",
+        "tags": "`#nextjs` `#authentication` `#nextauth` `#prisma`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-13_claude-codes-creator-does-this-before-every-single-project.md",
+    "source_url": "https://www.youtube.com/watch?v=B-UXpneKw6M",
+    "source_title_at_audit": "Claude Code's Creator Does This Before Every Single Project",
+    "original_index_rows": [
+      {
+        "number": "29",
+        "title": "Claude Code's Creator Does This Before Every Singl...",
+        "category": "AI Agents",
+        "tags": "`#langchain` `#rag` `#document-chatbot` `#vector-database`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-13_googles-new-tool-just-10xd-claude-code.md",
+    "source_url": "https://www.youtube.com/watch?v=Wu67lLD8bB0",
+    "source_title_at_audit": "Google’s New Tool Just 10x’d Claude Code",
+    "original_index_rows": [
+      {
+        "number": "28",
+        "title": "Google’s New Tool Just 10x’d Claude Code",
+        "category": "Chrome Extension Development",
+        "tags": "`#chrome-extensions` `#react` `#typescript` `#web-development`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-13_openclaw-explained-baby-agi-security-threats-mac-mini-became.md",
+    "source_url": "https://www.youtube.com/watch?v=qP73cGLQmCU",
+    "source_title_at_audit": "OpenClaw Explained: Baby AGI, Security Threats, Mac Mini Became Everyone's Supercomputer | #237",
+    "original_index_rows": [
+      {
+        "number": "30",
+        "title": "OpenClaw Explained: Baby AGI, Security Threats, Ma...",
+        "category": "AI Development",
+        "tags": "`#nextjs` `#typescript` `#tailwindcss` `#openai`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-14_one-simple-system-gave-all-my-ai-tools-a-memory-heres-how.md",
+    "source_url": "https://www.youtube.com/watch?v=japT66frdhM",
+    "source_title_at_audit": "One Simple System Gave All My AI Tools a Memory. Here's How.",
+    "original_index_rows": [
+      {
+        "number": "32",
+        "title": "One Simple System Gave All My AI Tools a Memory. H...",
+        "category": "Web Development",
+        "tags": "`#webdevelopment` `#react` `#javascript` `#html`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-17_the-truth-about-popular-peptides-what-works-whats-overhyped-.md",
+    "source_url": "https://www.youtube.com/watch?v=3k9pBu27LcM",
+    "source_title_at_audit": "The Truth About Popular Peptides (What Works, What’s Overhyped) | Peptide Tier List pt.1",
+    "original_index_rows": [
+      {
+        "number": "33",
+        "title": "The Truth About Popular Peptides (What Works, What...",
+        "category": "Development",
+        "tags": "`#python` `#tkinter` `#sqlite` `#matplotlib`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_10-copilot-chat-prompts-i-use-every-week.md",
+    "source_url": "https://www.youtube.com/watch?v=oAbLb-K8VZo",
+    "source_title_at_audit": "10 Copilot Chat Prompts I Use Every Week",
+    "original_index_rows": [
+      {
+        "number": "41",
+        "title": "10 Copilot Chat Prompts I Use Every Week",
+        "category": "Machine Learning",
+        "tags": "`#rag` `#python` `#ai` `#llm`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_andrej-karpathy-just-10xd-everyones-claude-code.md",
+    "source_url": "https://www.youtube.com/watch?v=sboNwYmH3AY",
+    "source_title_at_audit": "Andrej Karpathy Just 10x’d Everyone’s Claude Code",
+    "original_index_rows": [
+      {
+        "number": "37",
+        "title": "Andrej Karpathy Just 10x’d Everyone’s Claude Code",
+        "category": "Game Development",
+        "tags": "`#ai-testing` `#game-development` `#reinforcement-learning` `#bug-detection`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_anthropic-just-gave-you-3-tools-that-work-while-youre-gone.md",
+    "source_url": "https://www.youtube.com/watch?v=3e7gmNPr5Vo",
+    "source_title_at_audit": "Anthropic Just Gave You 3 Tools That Work While You're Gone.",
+    "original_index_rows": [
+      {
+        "number": "35",
+        "title": "Anthropic Just Gave You 3 Tools That Work While Yo...",
+        "category": "No-Code Development",
+        "tags": "`#flutterflow` `#nocode` `#mobileapps` `#flutter`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_i-have-25-ai-agents-working-247-with-openclaw.md",
+    "source_url": "https://www.youtube.com/watch?v=zwV5qC1wS6M",
+    "source_title_at_audit": "I have 25 AI Agents working 24/7 with Openclaw",
+    "original_index_rows": [
+      {
+        "number": "43",
+        "title": "I have 25 AI Agents working 24/7 with Openclaw",
+        "category": "AI Agents",
+        "tags": "`#openclaw` `#ai-agents` `#automation` `#multi-agent-systems`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_i-spent-6-months-learning-copilot-ai-agents-heres-everything.md",
+    "source_url": "https://www.youtube.com/watch?v=_sRzTB9CIxQ",
+    "source_title_at_audit": "I Spent 6 Months Learning CoPilot & AI Agents — Here's EVERYTHING You Need To Know",
+    "original_index_rows": [
+      {
+        "number": "42",
+        "title": "I Spent 6 Months Learning CoPilot & AI Agents — He...",
+        "category": "Full-Stack Development",
+        "tags": "`#nextjs` `#typescript` `#fullstack` `#prisma`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_prompting-just-split-into-4-skills-you-only-know-one-heres-w.md",
+    "source_url": "https://www.youtube.com/watch?v=BpibZSMGtdY",
+    "source_title_at_audit": "'Prompting' Just Split Into 4 Skills. You Only Know One. Here's Why You Need the Other 3 in 2026.",
+    "original_index_rows": [
+      {
+        "number": "40",
+        "title": "'Prompting' Just Split Into 4 Skills. You Only Kno...",
+        "category": "Full-Stack Development",
+        "tags": "`#nextjs` `#aws-amplify` `#fullstack` `#serverless`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_wall-street-just-bet-285-billion-on-ai-agents-the-best-one-b.md",
+    "source_url": "https://www.youtube.com/watch?v=D-Ww1wLIp60",
+    "source_title_at_audit": "Wall Street Just Bet $285 Billion on AI Agents. The Best One Barely Works.",
+    "original_index_rows": [
+      {
+        "number": "36",
+        "title": "Wall Street Just Bet $285 Billion on AI Agents. Th...",
+        "category": "Data Analysis",
+        "tags": "`#data-analysis` `#career-transition` `#sql` `#excel`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_you-dont-need-saas-the-010-system-that-replaced-my-ai-workfl.md",
+    "source_url": "https://www.youtube.com/watch?v=2JiMmye2ezg",
+    "source_title_at_audit": "AI Automation: The $0.10 No-Code System That Replaced My SaaS",
+    "original_index_rows": [
+      {
+        "number": "39",
+        "title": "You Don't Need SaaS. The $0.10 System That Replace...",
+        "category": "API Testing",
+        "tags": "`#postman` `#api-testing` `#automation` `#javascript`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_you-need-to-try-these-open-source-ai-projects-right-now.md",
+    "source_url": "https://www.youtube.com/watch?v=sXVbWkoCVaA",
+    "source_title_at_audit": "You NEED to try these open-source AI projects right now...",
+    "original_index_rows": [
+      {
+        "number": "34",
+        "title": "You NEED to try these open-source AI projects righ...",
+        "category": "Web Development",
+        "tags": "`#streamlit` `#python` `#webdev` `#rapid-prototyping`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-04-29_your-claude-limit-burns-in-90-minutes-because-of-one-chatgpt.md",
+    "source_url": "https://www.youtube.com/watch?v=5ztI_dbj6ek",
+    "source_title_at_audit": "Your Claude Limit Burns In 90 Minutes Because Of One ChatGPT Habit.",
+    "original_index_rows": [
+      {
+        "number": "38",
+        "title": "Your Claude Limit Burns In 90 Minutes Because Of O...",
+        "category": "Machine Learning",
+        "tags": "`#machine-learning` `#deployment` `#flask` `#google-colab`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-04_ai-insider-the-fastest-way-to-use-ai-agents-in-your-business.md",
+    "source_url": "https://www.youtube.com/watch?v=cqMpTbTrMW4",
+    "source_title_at_audit": "AI Insider: The Fastest Way To Use AI Agents In Your Business, Content & Life (Open Claw & Claude)",
+    "original_index_rows": [
+      {
+        "number": "44",
+        "title": "AI Insider: The Fastest Way To Use AI Agents In Yo...",
+        "category": "Development",
+        "tags": "`#discord` `#python` `#bot-development` `#automation`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-08_agentic-engineering-working-with-ai-not-just-using-it-brenda.md",
+    "source_url": "https://www.youtube.com/watch?v=BEKc4P87XKo",
+    "source_title_at_audit": "Agentic Engineering: Working With AI, Not Just Using It — Brendan O'Leary",
+    "original_index_rows": [
+      {
+        "number": "45",
+        "title": "Agentic Engineering: Working With AI, Not Just Usi...",
+        "category": "AI Agents",
+        "tags": "`#claude` `#anthropic` `#ai-models` `#api-integration`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-08_the-7-skills-you-need-to-build-ai-agents.md",
+    "source_url": "https://www.youtube.com/watch?v=mtiOK2QG9Q0",
+    "source_title_at_audit": "The 7 Skills You Need to Build AI Agents",
+    "original_index_rows": [
+      {
+        "number": "46",
+        "title": "The 7 Skills You Need to Build AI Agents",
+        "category": "Web Development",
+        "tags": "`#css-grid` `#web-development` `#responsive-design` `#frontend`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-08_the-multi-agent-architecture-that-actually-ships-luke-alvoei.md",
+    "source_url": "https://www.youtube.com/watch?v=ow1we5PzK-o",
+    "source_title_at_audit": "The Multi-Agent Architecture That Actually Ships — Luke Alvoeiro, Factory",
+    "original_index_rows": [
+      {
+        "number": "48",
+        "title": "The Multi-Agent Architecture That Actually Ships —...",
+        "category": "Career",
+        "tags": "`#data-analytics` `#career-change` `#portfolio-building` `#sql`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-08_your-ai-agent-is-locked-to-one-model-openclaw-just-killed-th.md",
+    "source_url": "https://www.youtube.com/watch?v=85Q9htV2CBE",
+    "source_title_at_audit": "Your AI Agent Is Locked To One Model. OpenClaw Just Killed That.",
+    "original_index_rows": [
+      {
+        "number": "47",
+        "title": "Your AI Agent Is Locked To One Model. OpenClaw Jus...",
+        "category": "Machine Learning",
+        "tags": "`#neural-networks` `#machine-learning` `#python` `#from-scratch`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-05-10_youre-wasting-40-of-your-ai-time-on-something-fixable.md",
+    "source_url": "https://www.youtube.com/watch?v=647pSnX5H_Y",
+    "source_title_at_audit": "You're Wasting 40% Of Your AI Time On Something Fixable",
+    "original_index_rows": [
+      {
+        "number": "49",
+        "title": "You're Wasting 40% Of Your AI Time On Something Fi...",
+        "category": "Python Development",
+        "tags": "`#python` `#cli` `#click` `#command-line`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  },
+  {
+    "file": "2026-03-04_agent-skills-for-business-explained-in-less-than-15-minutes.md",
+    "source_url": "https://www.youtube.com/watch?v=YqREHU0pvUc",
+    "source_title_at_audit": "How I Turn Any Business Task Into a Reusable AI Skill",
+    "original_index_rows": [
+      {
+        "number": "22",
+        "title": "Agent Skills for business… explained in less than ...",
+        "category": "Game Development",
+        "tags": "`#javascript` `#game-development` `#tutorial` `#beginner-coding`",
+        "status": "Backlog"
+      }
+    ],
+    "reason": "Grok URL-only output lacks verifiable video transcript; source/content mismatches found in this cohort"
+  }
+]
