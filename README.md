@@ -40,7 +40,7 @@ The goal: capture useful content on the go, then review implementation requests 
 │                                                               │
 │  Source Router → detects URL type → dispatches:               │
 │                                                               │
-│  YouTube    → Grok API (transcript + summary via xAI)        │
+│  YouTube    → verified captions, then Claude analysis         │
 │  X/Twitter  → Grok API (thread extraction via xAI)           │
 │  Articles   → readability-lxml + BeautifulSoup               │
 │  GitHub     → GitHub API + README scrape                     │
@@ -108,7 +108,7 @@ Edit `.env` with your API keys:
 | Key | Required | Purpose |
 |-----|----------|---------|
 | `ANTHROPIC_API_KEY` | Yes | Claude API for AI processing |
-| `XAI_API_KEY` | Optional | Grok API for YouTube/Twitter extraction |
+| `XAI_API_KEY` | Optional | Grok API for X/Twitter extraction |
 | `DISCORD_BOT_TOKEN` | For bot | Discord bot token for MegaMind |
 | `DISCORD_SERVER_ID` | For bot | RussHub server ID |
 | `DISCORD_EXTRACT_CHANNEL_ID` | For bot | #extract channel ID |
@@ -220,7 +220,7 @@ Every extraction produces a markdown file and a Forum post:
 
 ```markdown
 # [Title]
-> Source: YouTube | Extracted: 2025-01-15 14:30 UTC | Method: grok_api
+> Source: YouTube | Extracted: 2025-01-15 14:30 UTC | Method: youtube_transcript_api
 > URL: https://...
 
 ### Summary         — What this content is about
@@ -240,14 +240,16 @@ Every extraction produces a markdown file and a Forum post:
 
 | Source | Method | Why |
 |--------|--------|-----|
-| YouTube | Grok API (xAI) | Best transcript extraction, handles long videos |
+| YouTube | YouTube captions or yt-dlp subtitles | Transcript tied to the requested video ID |
 | X/Twitter | Grok API (xAI) | Platform access — only xAI can reliably pull threads |
 | Articles/Blogs | readability-lxml + BeautifulSoup | Clean extraction, handles most sites |
 | GitHub repos | GitHub API + README scrape | Structured repo info + documentation |
 
-All sources fall back to manual paste mode (`--paste`) if API keys aren't configured.
+YouTube refuses automated extraction when no verifiable captions are available. Interactive use can accept a manually copied transcript.
 
-YouTube extraction includes **oEmbed title resolution** — if the AI returns a generic or malformed title, MegaMind fetches the real title from YouTube's oEmbed API.
+YouTube metadata supplies the video title when available. A model's description of a URL alone is never accepted as the video's content.
+
+Older URL-only Grok outputs with unverified content are preserved under `extractions/quarantine/`. Their index rows are marked `Unverified`; use a transcript-backed re-extraction before relying on them.
 
 ---
 
@@ -403,7 +405,7 @@ MegaMind/
 ├── extractors/
 │   ├── detector.py           # URL → source type detection
 │   ├── base.py               # Base extractor interface
-│   ├── youtube.py            # YouTube via Grok API (+ oEmbed title fix)
+│   ├── youtube.py            # YouTube via captions or manual transcript
 │   ├── twitter.py            # Twitter/X via Grok API
 │   ├── github.py             # GitHub via API + scraping
 │   └── article.py            # Articles via readability + scraping
@@ -433,7 +435,7 @@ MegaMind/
 | Service | systemd user service (`megamind.service`) |
 | Discord Bot | discord.py — watches #extract, posts to Forum with auto-tagging |
 | YouTube Watcher | google-api-python-client — playlist polling + OAuth2 management |
-| Grok/xAI | OpenAI-compatible client — transcripts + thread extraction |
+| Grok/xAI | OpenAI-compatible client for X/Twitter threads |
 | LLM | Anthropic Claude Sonnet (primary) |
 | Articles | readability-lxml + BeautifulSoup |
 | Obsidian | File-based via WSL mount, synced via Obsidian Sync |
@@ -501,7 +503,7 @@ MegaMind runs alongside **OpenClaw** (AI assistant bot) on the same Discord serv
 - Python 3.11+
 - WSL2 (Ubuntu) on Windows 11
 - Anthropic API key (for Claude processing)
-- xAI API key (optional, for Grok YouTube/Twitter extraction)
+- xAI API key (optional, for X/Twitter extraction)
 - Discord bot token (for MegaMind bot)
 
 ---

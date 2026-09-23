@@ -9,7 +9,7 @@ from outputs.formatter import extract_tags_from_content, extract_category_from_c
 
 
 INDEX_HEADER = """\
-# Co-Ord Extraction Index
+# MegaMind Extraction Index
 
 > Centralised tracker for all extracted resources. Managed by MegaMind.
 

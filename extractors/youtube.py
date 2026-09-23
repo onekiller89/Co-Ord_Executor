@@ -1,4 +1,4 @@
-"""YouTube video extraction via transcript API, Grok API, or manual paste."""
+"""YouTube video extraction via captions or manual paste."""
 
 import html
 import logging
@@ -8,7 +8,6 @@ import tempfile
 import urllib.request
 import json
 from pathlib import Path
-from openai import OpenAI
 
 import config
 from extractors.base import BaseExtractor, ExtractionResult
@@ -17,22 +16,8 @@ from extractors.detector import extract_video_id
 log = logging.getLogger("megamind.youtube")
 
 
-GROK_SYSTEM_PROMPT = """You are extracting content from a YouTube video. Given the video URL, provide a comprehensive extraction including:
-
-1. The exact video title
-2. The channel/creator name
-3. A detailed summary of the video content
-4. All key points, insights, and takeaways discussed
-5. Any tools, frameworks, libraries, or resources mentioned (with links if stated)
-6. Any step-by-step instructions or tutorials shown
-7. Any code snippets or commands demonstrated
-8. Timestamps for major sections if apparent
-
-Be thorough - capture everything valuable. Format as structured text, not markdown."""
-
-
 class YouTubeExtractor(BaseExtractor):
-    """Extract YouTube video content via captions, Grok, or manual paste."""
+    """Extract YouTube video content via captions or manual paste."""
 
     def extract(self, url: str) -> ExtractionResult:
         video_id = extract_video_id(url)
@@ -40,7 +25,8 @@ class YouTubeExtractor(BaseExtractor):
         thumbnail_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg" if video_id else ""
         snippet = _fetch_youtube_snippet(canonical_url)
 
-        # Try real YouTube captions first. Grok is a fallback, not a transcript source.
+        # Use captions tied to this video ID. A model's account of a URL is not
+        # evidence that it actually accessed that video's content.
         if video_id:
             try:
                 return self._extract_via_transcript_api(
@@ -55,21 +41,11 @@ class YouTubeExtractor(BaseExtractor):
             except Exception as exc:
                 log.warning("yt-dlp subtitle extraction failed for %s: %s", canonical_url, exc)
 
-        # Try Grok API if captions are unavailable.
-        if config.XAI_API_KEY:
-            result = self._extract_via_grok(canonical_url, thumbnail_url, snippet)
-            if _looks_like_real_video_content(result.raw_content):
-                return result
-            raise RuntimeError(
-                "Grok did not return usable YouTube content. "
-                "The extractor needs captions or a real transcript, not an access-limit message."
-            )
-
         # In CI mode, can't prompt for input
         if config.CI_MODE:
             raise RuntimeError(
-                "Cannot extract YouTube without XAI_API_KEY in CI mode. "
-                "Add XAI_API_KEY to your GitHub Secrets."
+                "No verifiable YouTube captions were available for this video. "
+                "Refusing to generate an extraction from the URL alone."
             )
 
         # Fall back to manual paste
@@ -191,64 +167,17 @@ class YouTubeExtractor(BaseExtractor):
             },
         )
 
-    def _extract_via_grok(
-        self,
-        url: str,
-        thumbnail_url: str = "",
-        snippet: dict | None = None,
-    ) -> ExtractionResult:
-        """Use Grok API to extract video content."""
-        client = OpenAI(
-            api_key=config.XAI_API_KEY,
-            base_url=config.GROK_API_BASE,
-        )
-
-        response = client.chat.completions.create(
-            model=config.GROK_MODEL,
-            messages=[
-                {"role": "system", "content": GROK_SYSTEM_PROMPT},
-                {"role": "user", "content": f"Extract all content from this YouTube video: {url}"},
-            ],
-        )
-
-        content = response.choices[0].message.content
-
-        # Track Grok token usage for budget
-        try:
-            from budget import record_usage
-            if response.usage:
-                record_usage(
-                    model=config.GROK_MODEL,
-                    input_tokens=response.usage.prompt_tokens or 0,
-                    output_tokens=response.usage.completion_tokens or 0,
-                    api="grok",
-                    title=url,
-                )
-        except Exception:
-            pass
-
-        title = (snippet or {}).get("title") or _extract_title(content, url)
-
-        return ExtractionResult(
-            title=title,
-            url=url,
-            source_type="YouTube",
-            raw_content=content,
-            metadata={"extraction_method": "grok_api", "thumbnail": thumbnail_url},
-        )
-
     def _extract_via_paste(self, url: str, thumbnail_url: str = "") -> ExtractionResult:
-        """Prompt user to paste Grok output manually."""
+        """Prompt user to paste an actual transcript manually."""
         print(f"\n{'='*60}")
         print(f"  MANUAL EXTRACTION: YouTube Video")
         print(f"  URL: {url}")
         print(f"{'='*60}")
-        print(f"\nNo Grok API key configured. Please:")
-        print(f"  1. Open Grok (grok.x.ai) or X with Grok")
-        print(f"  2. Ask Grok to summarise this video:")
-        print(f"     \"{url}\"")
-        print(f"  3. Paste the full response below.")
-        print(f"\nPaste Grok's response (press Enter twice when done):\n")
+        print("\nNo verifiable captions were available automatically. Please:")
+        print("  1. Open the video and show its transcript or captions.")
+        print("  2. Copy the actual transcript for this video.")
+        print("  3. Paste it below, then press Enter twice.")
+        print("\nPaste the transcript:\n")
 
         lines = []
         empty_count = 0
@@ -290,7 +219,7 @@ class YouTubeExtractor(BaseExtractor):
 
 
 def _extract_title(content: str, url: str) -> str:
-    """Extract video title from Grok's response or YouTube API.
+    """Extract video title from supplied text or YouTube API.
 
     Tries in order:
     1. Explicit "Title:" or "Video Title:" lines in the response
@@ -450,32 +379,3 @@ def _parse_vtt_transcript(vtt: str) -> str:
 
     flush()
     return "\n".join(chunks)
-
-
-def _looks_like_real_video_content(content: str) -> bool:
-    """Reject model responses that only explain they cannot access YouTube."""
-    text = content.lower()
-    blocked_phrases = (
-        "unable to access",
-        "can't access",
-        "cannot access",
-        "do not have access",
-        "don't have access",
-        "provide the transcript",
-        "paste the transcript",
-        "show transcript",
-        "i cannot watch",
-        "i can't watch",
-    )
-    if any(phrase in text for phrase in blocked_phrases):
-        return False
-
-    useful_markers = (
-        "summary",
-        "key point",
-        "takeaway",
-        "timestamp",
-        "channel",
-        "transcript",
-    )
-    return len(content.strip()) >= 1000 and any(marker in text for marker in useful_markers)
