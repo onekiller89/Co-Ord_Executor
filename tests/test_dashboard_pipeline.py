@@ -36,6 +36,7 @@ class DashboardPipelineTests(unittest.TestCase):
             )
             with patch.object(config, "INDEX_FILE", index):
                 self.assertTrue(update_status(1, "TODO"))
+            self.assertIn("| `#agents` `#notes` | TODO |", index.read_text(encoding="utf-8"))
             row = index.read_text(encoding="utf-8").splitlines()[1].split("|")
             self.assertEqual(row[5].strip(), "`#agents` `#notes`")
             self.assertEqual(row[6].strip(), "TODO")

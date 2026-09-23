@@ -174,6 +174,8 @@ Disable auto-start with `MEGAMIND_DASHBOARD=0`.
 
 Source review records and raw source snapshots stay under ignored local `data/` files. For older YouTube notes, **View source text** can recover captions from the same video ID; it labels these as recovered, not as the original ingestion snapshot. The source method says how text was obtained, not whether every claim in the source is true.
 
+Dashboard workflow status edits update the local `extractions/INDEX.md`. GitHub receives them when the next extraction is published from a current production `main`. Source review decisions remain private to this WSL installation.
+
 Model selection lives in `.env`: `MODEL_PROVIDER=codex` and `CODEX_MODEL=gpt-6-astra` use the local Codex CLI sign-in and subscription allowance. If Codex is unavailable, MegaMind uses the Anthropic API key with `CLAUDE_MODEL=claude-opus-5-5`. ChatGPT/Codex subscriptions do not pay ordinary OpenAI API charges. The concise analysis prompt is in `prompts/analysis-v2.md`.
 
 ---
