@@ -87,3 +87,4 @@
 | 81 | 4 AI Agents To Automate 99% Of Your Life | YouTube | AI Agents | `#ai-agents` `#productivity` `#automation` `#prompt-engineering` | Backlog | 2026-09-17 | [view](./2026-09-17_4-ai-agents-to-automate-99-of-your-life.md) |
 | 82 | 5 AI Prompts To Fix Your Entire Life In 1 Day | YouTube | Personal Development | `#self-improvement` `#ai-prompting` `#decision-making` `#identity` | Backlog | 2026-09-17 | [view](./2026-09-17_5-ai-prompts-to-fix-your-entire-life-in-1-day.md) |
 | 83 | 20 Quantum Cheat Codes That I Wish I Knew In My 20... | YouTube | Personal Development | `#personal-finance` `#career-growth` `#mindset` `#investing` | Backlog | 2026-09-17 | [view](./2026-09-17_20-quantum-cheat-codes-that-i-wish-i-knew-in-my-20s.md) |
+| 84 | AI Agents: The Most Valuable Skill You Can Learn i... | YouTube | AI Agent Systems & Automation |  | Backlog | 2026-09-23 | [view](./2026-09-23_ai-agents-the-most-valuable-skill-you-can-learn-in-2026-full.md) |
